@@ -9,3 +9,6 @@ docker-up:
 
 lint:
 	$(DOCKER) run go ./scripts/lint.sh
+
+build:
+	$(DOCKER) run go ./scripts/build.sh
