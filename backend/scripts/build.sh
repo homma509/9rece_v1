@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+cd api
+find . -name main.go -type f \
+ | xargs -n 1 dirname \
+ | xargs -n 1 -I@ bash -c "CGO_ENABLED=0 GOOS=linux go build -v -installsuffix cgo -o ../build/@/main ./@"
