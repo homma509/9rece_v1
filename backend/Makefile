@@ -12,3 +12,6 @@ lint:
 
 build:
 	$(DOCKER) run go ./scripts/build.sh
+
+clean:
+	./scripts/clean.sh
