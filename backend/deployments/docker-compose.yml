@@ -15,19 +15,19 @@ services:
       - ../.env.dynamodb-local
     networks:
       - net
-    tty: true
-  # sls:
-  #   build:
-  #     context: ../
-  #     dockerfile: ./Dockerfile_sls
-  #   volumes:
-  #     - ../:/opt/app
-  #   env_file:
-  #     - .env.aws-config
-  #     - .env.aws-credentials
-  #   networks:
-  #     - net
-  #   tty: true
+    # tty: true
+  sls:
+    build:
+      context: ../
+      dockerfile: ./deployments/Dockerfile_sls
+    volumes:
+      - ../:/opt/app
+    env_file:
+      - ../.env.aws-config
+      - ../.env.aws-credentials
+    networks:
+      - net
+    # tty: true
 
 networks:
   net:
