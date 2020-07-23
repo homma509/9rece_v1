@@ -12,6 +12,7 @@ provider:
 
 custom:
   projectName: 9rece-backend-${self:provider.stage}
+  bucketName: ${self:custom.projectName}
   appSync:
     name: ${self:custom.projectName}
     authenticationType: AMAZON_COGNITO_USER_POOLS
@@ -19,7 +20,7 @@ custom:
       awsRegion: ${self:provider.region}
       userPoolId: { Ref: CognitoUserPool }
       defaultAction: ALLOW # @aws_auth(cognito_groups: ["Admins"])を使用する場合にDENY
-    schema: schema.graphql
+    schema: ./mapping-templates/schema.graphql
     dataSources:
       - type: AMAZON_DYNAMODB
         name: ${env:DYNAMO_TABLE_NAME}
@@ -73,23 +74,30 @@ resources:
                     - "dynamodb:Scan"
                     - "dynamodb:UpdateItem"
                   Resource:
-                    - { Fn::GetAtt: [Table, Arn] }
-                    - "Fn::Join":
-                        - ""
-                        - - { Fn::GetAtt: [Table, Arn] }
-                          - "/*"
+                    - Fn::Join:
+                        - ":"
+                        - - "arn:aws:dynamodb"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "table/${env:DYNAMO_TABLE_NAME}"
+                    - Fn::Join:
+                        - ":"
+                        - - "arn:aws:dynamodb"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "table/${env:DYNAMO_TABLE_NAME}/*"
                 - Effect: "Allow"
                   Action:
                     - "logs:CreateLogGroup"
                     - "logs:CreateLogStream"
                     - "logs:PutLogEvents"
                   Resource:
-                    - "Fn::Join":
-                        - ":"
-                        - - "arn:aws:logs"
-                          - Ref: "AWS::Region"
-                          - Ref: "AWS::AccountId"
-                          - "log-group:/aws/appsync/*:*:*"
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "log-group:/aws/appsync/*:*:*"
 
     # Cognitoの設定
     CognitoUserPool:
@@ -187,11 +195,9 @@ resources:
                   Resource:
                     Fn::Join:
                       - ""
-                      - - { Fn::GetAtt: [Bucket, Arn] }
+                      - - "arn:aws:s3:::"
+                        - bucketName
                         - "/*"
-                      # - - "arn:aws:s3:::"
-                      #   - Ref: Bucket
-                      #   - "/*"
 
     CognitoUnAuthRole:
       Type: AWS::IAM::Role

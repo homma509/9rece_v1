@@ -1,0 +1,8 @@
+{
+  "version": "2017-02-28",
+  "operation": "GetItem",
+  "key": {
+    "ID": $util.dynamodb.toDynamoDBJson($ctx.args.ID),
+    "DataType": $util.dynamodb.toDynamoDBJson($ctx.args.DataType),
+  },
+}
