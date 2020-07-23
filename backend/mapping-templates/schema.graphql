@@ -1,0 +1,149 @@
+input CreateReceInput {
+  DataType: String!
+  ID: String!
+  FacilityID: String
+  CaredOn: AWSDate
+  ClientID: String
+  BuildingID: String
+  PlanClass: String
+  Value: Int
+}
+
+input DeleteReceInput {
+  DataType: String!
+  ID: String!
+}
+
+type Mutation {
+  createRece(input: CreateReceInput!): Rece
+  updateRece(input: UpdateReceInput!): Rece
+  deleteRece(input: DeleteReceInput!): Rece
+}
+
+type Query {
+  getRece(ID: String!, DataType: String!): Rece
+  listReces(
+    filter: TableReceFilterInput
+    limit: Int
+    nextToken: String
+  ): ReceConnection
+}
+
+type Rece {
+  DataType: String!
+  ID: String!
+  FacilityID: String
+  CaredOn: AWSDate
+  ClientID: String
+  BuildingID: String
+  PlanClass: String
+  Value: Int
+  FacilityName: String
+}
+
+type ReceConnection {
+  items: [Rece]
+  nextToken: String
+}
+
+type Subscription {
+  onCreateRece(
+    DataType: String
+    ID: String
+    FacilityID: String
+    CaredOn: AWSDate
+    ClientID: String
+  ): Rece @aws_subscribe(mutations: ["createRece"])
+  onUpdateRece(
+    DataType: String
+    ID: String
+    FacilityID: String
+    CaredOn: AWSDate
+    ClientID: String
+  ): Rece @aws_subscribe(mutations: ["updateRece"])
+  onDeleteRece(
+    DataType: String
+    ID: String
+    FacilityID: String
+    CaredOn: AWSDate
+    ClientID: String
+  ): Rece @aws_subscribe(mutations: ["deleteRece"])
+}
+
+input TableBooleanFilterInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+input TableFloatFilterInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  contains: Float
+  notContains: Float
+  between: [Float]
+}
+
+input TableIDFilterInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+}
+
+input TableIntFilterInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  contains: Int
+  notContains: Int
+  between: [Int]
+}
+
+input TableReceFilterInput {
+  DataType: TableStringFilterInput
+  ID: TableStringFilterInput
+  FacilityID: TableStringFilterInput
+  CaredOn: TableStringFilterInput
+  ClientID: TableStringFilterInput
+  BuildingID: TableStringFilterInput
+  PlanClass: TableStringFilterInput
+  Value: TableIntFilterInput
+  FacilityName: TableStringFilterInput
+}
+
+input TableStringFilterInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+}
+
+input UpdateReceInput {
+  DataType: String!
+  ID: String!
+  FacilityID: String
+  CaredOn: AWSDate
+  ClientID: String
+  BuildingID: String
+  PlanClass: String
+  Value: Int
+}
