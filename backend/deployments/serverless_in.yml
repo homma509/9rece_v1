@@ -301,7 +301,7 @@ functions:
   #     onSuccess: arn:aws:sns:ap-northeast-1:878068647223:${self:custom.projectName}-Point
   post_facilities:
     name: ${self:custom.projectName}-post-facilities
-    handler: build/api/post_facilities/main
+    handler: build/post_facilities/main
     role: { Fn::GetAtt: [LambdaS3Role, Arn] }
     events:
       - s3:
