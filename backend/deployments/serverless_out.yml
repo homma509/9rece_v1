@@ -1,0 +1,228 @@
+# Application configure
+
+service: nine-rece-backend-out
+
+frameworkVersion: ">=1.28.0 <2.0.0"
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  runtime: go1.x
+  region: ${env:REGION_NAME, "ap-northeast-1"}
+
+custom:
+  projectName: 9rece-backend-${self:provider.stage}
+  appSync:
+    name: ${self:custom.projectName}
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    userPoolConfig:
+      awsRegion: ${self:provider.region}
+      userPoolId: { Ref: CognitoUserPool }
+      defaultAction: ALLOW # @aws_auth(cognito_groups: ["Admins"])を使用する場合にDENY
+    schema: schema.graphql
+    dataSources:
+      - type: AMAZON_DYNAMODB
+        name: ${env:DYNAMO_TABLE_NAME}
+        config:
+          tableName: ${env:DYNAMO_TABLE_NAME}
+          serviceRoleArn: { Fn::GetAtt: [AppSyncRole, Arn] }
+          region: ${self:provider.region}
+    logConfig:
+      loggingRoleArn: { Fn::GetAtt: [AppSyncRole, Arn] }
+      level: ALL
+      excludeVerboseContent: false
+    mappingTemplates:
+      - dataSource: ${env:DYNAMO_TABLE_NAME}
+        type: Query
+        field: getRece
+        request: "GetRece.req.vtl"
+        response: "GetRece.res.vtl"
+      - dataSource: ${env:DYNAMO_TABLE_NAME}
+        type: Query
+        field: listReces
+        request: "ListReces.req.vtl"
+        response: "ListReces.res.vtl"
+
+resources:
+  Resources:
+    # AppSyncRole:
+    AppSyncRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-AppSyncRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service: "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-AppSyncPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:GetItem"
+                    - "dynamodb:PutItem"
+                    - "dynamodb:Query"
+                    - "dynamodb:Scan"
+                    - "dynamodb:UpdateItem"
+                  Resource:
+                    - { Fn::GetAtt: [Table, Arn] }
+                    - "Fn::Join":
+                        - ""
+                        - - { Fn::GetAtt: [Table, Arn] }
+                          - "/*"
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "Fn::Join":
+                        - ":"
+                        - - "arn:aws:logs"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "log-group:/aws/appsync/*:*:*"
+
+    # Cognitoの設定
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:custom.projectName}
+        AdminCreateUserConfig:
+          AllowAdminCreateUserOnly: true
+          UnusedAccountValidityDays: 7
+        AliasAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        EmailVerificationMessage: "認証コードは {####} です。"
+        EmailVerificationSubject: "認証コード発行"
+        MfaConfiguration: "OFF"
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+            RequireUppercase: true
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:custom.projectName}
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        RefreshTokenValidity: 30
+        GenerateSecret: false
+        ReadAttributes:
+          - "email"
+          - "name"
+        WriteAttributes:
+          - "email"
+          - "name"
+
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: ${self:custom.projectName}
+        AllowUnauthenticatedIdentities: false
+        CognitoIdentityProviders:
+          - ClientId:
+              Ref: CognitoUserPoolClient
+            ProviderName: { Fn::GetAtt: [CognitoUserPool, ProviderName] }
+
+    CognitoIdentityPoolRoleAttachment:
+      Type: AWS::Cognito::IdentityPoolRoleAttachment
+      Properties:
+        IdentityPoolId:
+          Ref: CognitoIdentityPool
+        Roles:
+          authenticated: { Fn::GetAtt: [CognitoAuthRole, Arn] }
+          unauthenticated: { Fn::GetAtt: [CognitoUnAuthRole, Arn] }
+
+    CognitoAuthRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-CognitoAuthRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Federated: "cognito-identity.amazonaws.com"
+              Action:
+                - "sts:AssumeRoleWithWebIdentity"
+              Condition:
+                StringEquals:
+                  "cognito-identity.amazonaws.com:aud":
+                    Ref: CognitoIdentityPool
+                "ForAnyValue:StringLike":
+                  "cognito-identity.amazonaws.com:amr": authenticated
+        Policies:
+          - PolicyName: ${self:custom.projectName}-CognitoAuthPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "mobileanalytics:PutEvents"
+                    - "cognito-sync:*"
+                    - "cognito-identity:*"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:PutObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - { Fn::GetAtt: [Bucket, Arn] }
+                        - "/*"
+                      # - - "arn:aws:s3:::"
+                      #   - Ref: Bucket
+                      #   - "/*"
+
+    CognitoUnAuthRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-CognitoUnAuthRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Federated: "cognito-identity.amazonaws.com"
+              Action:
+                - "sts:AssumeRoleWithWebIdentity"
+              Condition:
+                StringEquals:
+                  "cognito-identity.amazonaws.com:aud":
+                    Ref: CognitoIdentityPool
+                "ForAnyValue:StringLike":
+                  "cognito-identity.amazonaws.com:amr": unauthenticated
+        Policies:
+          - PolicyName: ${self:custom.projectName}-CognitoUnAuthPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "mobileanalytics:PutEvents"
+                    - "cognito-sync:*"
+                  Resource: "*"
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-appsync-plugin

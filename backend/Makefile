@@ -15,3 +15,11 @@ build:
 
 clean:
 	./scripts/clean.sh
+
+deploy:
+	# usage make deploy IO=in STAGE=dev
+	$(DOCKER) run sls ./scripts/deploy.sh ${IO} ${STAGE}
+
+remove:
+	# usage make remove IO=in STAGE=dev
+	$(DOCKER) run sls ./scripts/remove.sh ${IO} ${STAGE}

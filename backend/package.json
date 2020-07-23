@@ -1,0 +1,12 @@
+{
+  "name": "9rece",
+  "description": "",
+  "license": "MIT",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "serverless-dotenv-plugin": "^2.3.2",
+    "serverless-appsync-plugin": "^1.3.0",
+    "serverless-s3-sync": "^1.12.0"
+  }
+}
