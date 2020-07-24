@@ -65,6 +65,16 @@ func (f *Factory) FacilityFile() controller.FacilityFile {
 	}).(controller.FacilityFile)
 }
 
+// DailyClientPointFile 日別患者行為点数ファイルを生成します
+func (f *Factory) DailyClientPointFile() controller.DailyClientPointFile {
+	return f.container("DailyClientPointFile", func() interface{} {
+		config := &aws.Config{
+			Region: aws.String(f.envs.RegionName()),
+		}
+		return file.NewFile(config)
+	}).(controller.DailyClientPointFile)
+}
+
 // FacilityController 施設ハンドラを生成します
 func (f *Factory) FacilityController() controller.FacilityController {
 	return f.container("FacilityController", func() interface{} {
@@ -73,6 +83,16 @@ func (f *Factory) FacilityController() controller.FacilityController {
 			f.FacilityFile(),
 		)
 	}).(controller.FacilityController)
+}
+
+// DailyClientPointController 日別患者行為点数ハンドラを生成します
+func (f *Factory) DailyClientPointController() controller.DailyClientPointController {
+	return f.container("DailyClientPointController", func() interface{} {
+		return controller.NewDailyClientPointController(
+			f.DailyClientPointUsecase(),
+			f.DailyClientPointFile(),
+		)
+	}).(controller.DailyClientPointController)
 }
 
 // FacilityUsecase 施設ユースケースを生成します
@@ -84,6 +104,15 @@ func (f *Factory) FacilityUsecase() usecase.FacilityUsecase {
 	}).(usecase.FacilityUsecase)
 }
 
+// DailyClientPointUsecase 日別患者行為点数ユースケースを生成します
+func (f *Factory) DailyClientPointUsecase() usecase.DailyClientPointUsecase {
+	return f.container("DailyClientPointUsecase", func() interface{} {
+		return usecase.NewDailyClientPointUsecase(
+			f.DailyClientPointRepository(),
+		)
+	}).(usecase.DailyClientPointUsecase)
+}
+
 // FacilityRepository 施設リポジトリを生成します
 func (f *Factory) FacilityRepository() *db.FacilityRepository {
 	return f.container("FacilityRepository", func() interface{} {
@@ -91,4 +120,13 @@ func (f *Factory) FacilityRepository() *db.FacilityRepository {
 			f.Session(),
 		)
 	}).(*db.FacilityRepository)
+}
+
+// DailyClientPointRepository 日別患者行為点数リポジトリを生成します
+func (f *Factory) DailyClientPointRepository() *db.DailyClientPointRepository {
+	return f.container("DailyClientPointRepository", func() interface{} {
+		return db.NewDailyClientPointRepository(
+			f.Session(),
+		)
+	}).(*db.DailyClientPointRepository)
 }

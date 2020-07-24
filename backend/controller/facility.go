@@ -23,14 +23,14 @@ type FacilityFile interface {
 
 type facilityController struct {
 	facilityUsecase usecase.FacilityUsecase
-	file            FacilityFile
+	facilityFile    FacilityFile
 }
 
 // NewFacilityController 施設コントローラを生成します
 func NewFacilityController(u usecase.FacilityUsecase, f FacilityFile) FacilityController {
 	return &facilityController{
 		facilityUsecase: u,
-		file:            f,
+		facilityFile:    f,
 	}
 }
 
@@ -50,7 +50,7 @@ func (c *facilityController) Post(ctx context.Context, event events.S3Event) err
 
 func (c *facilityController) store(ctx context.Context, bucket, key string) error {
 	// S3ファイル取得
-	f, err := c.file.GetObject(bucket, key)
+	f, err := c.facilityFile.GetObject(bucket, key)
 	if err != nil {
 		return err
 	}

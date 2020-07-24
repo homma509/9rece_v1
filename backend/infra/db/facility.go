@@ -65,57 +65,57 @@ type FacilityMapper struct {
 }
 
 // EntityName Entity名の取得
-func (r *FacilityMapper) EntityName() string {
-	t := reflect.TypeOf(r.Facility)
+func (m *FacilityMapper) EntityName() string {
+	t := reflect.TypeOf(m.Facility)
 	return t.Name()
 }
 
 // GetPK PKを取得します
-func (r *FacilityMapper) GetPK() string {
-	return r.FacilityID
+func (m *FacilityMapper) GetPK() string {
+	return m.FacilityID
 }
 
 // SetPK PKを設定します
-func (r *FacilityMapper) SetPK() {
-	r.PK = r.GetPK()
+func (m *FacilityMapper) SetPK() {
+	m.PK = m.GetPK()
 }
 
 // GetSK SKを取得します
-func (r *FacilityMapper) GetSK() string {
-	return fmt.Sprintf("%sInfo", r.EntityName())
+func (m *FacilityMapper) GetSK() string {
+	return fmt.Sprintf("%sInfo", m.EntityName())
 }
 
 // SetSK SKを設定します
-func (r *FacilityMapper) SetSK() {
-	r.SK = r.GetSK()
+func (m *FacilityMapper) SetSK() {
+	m.SK = m.GetSK()
 }
 
 // GetVersion バージョンを取得します
-func (r *FacilityMapper) GetVersion() uint64 {
-	return r.Version
+func (m *FacilityMapper) GetVersion() uint64 {
+	return m.Version
 }
 
 // SetVersion Versionを設定します
-func (r *FacilityMapper) SetVersion(v uint64) {
-	r.Version = v
+func (m *FacilityMapper) SetVersion(v uint64) {
+	m.Version = v
 }
 
 // GetCreatedAt 登録日時を取得します
-func (r *FacilityMapper) GetCreatedAt() time.Time {
-	return r.CreatedAt
+func (m *FacilityMapper) GetCreatedAt() time.Time {
+	return m.CreatedAt
 }
 
 // SetCreatedAt 登録日時を設定します
-func (r *FacilityMapper) SetCreatedAt(t time.Time) {
-	r.CreatedAt = t
+func (m *FacilityMapper) SetCreatedAt(t time.Time) {
+	m.CreatedAt = t
 }
 
 // GetUpdatedAt 更新日時を取得します
-func (r *FacilityMapper) GetUpdatedAt() time.Time {
-	return r.UpdatedAt
+func (m *FacilityMapper) GetUpdatedAt() time.Time {
+	return m.UpdatedAt
 }
 
 // SetUpdatedAt 更新日時を設定します
-func (r *FacilityMapper) SetUpdatedAt(t time.Time) {
-	r.UpdatedAt = t
+func (m *FacilityMapper) SetUpdatedAt(t time.Time) {
+	m.UpdatedAt = t
 }

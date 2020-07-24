@@ -285,18 +285,18 @@ package:
     - ./build/**
 
 functions:
-  # post_effiles:
-  #   name: ${self:custom.projectName}-post-effiles
-  #   handler: build/api/post_effiles/main
-  #   role: { Fn::GetAtt: [LambdaS3Role, Arn] }
-  #   events:
-  #     - s3:
-  #         bucket: ${self:custom.bucketName}
-  #         event: s3:ObjectCreated:*
-  #         rules:
-  #           - prefix: public/effile/
-  #           - suffix: .txt
-  #         existing: true
+  post_effiles:
+    name: ${self:custom.projectName}-post-effiles
+    handler: build/post_effiles/main
+    role: { Fn::GetAtt: [LambdaS3Role, Arn] }
+    events:
+      - s3:
+          bucket: ${self:custom.bucketName}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: public/effile/
+            - suffix: .txt
+          existing: true
   #   destinations:
   #     onSuccess: arn:aws:sns:ap-northeast-1:878068647223:${self:custom.projectName}-Point
   post_facilities:
