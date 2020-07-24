@@ -17,13 +17,13 @@ type facilityUsecase struct {
 }
 
 // NewFacilityUsecase 施設ユースケースを生成します
-func NewFacilityUsecase(fr repository.FacilityRepository) FacilityUsecase {
+func NewFacilityUsecase(r repository.FacilityRepository) FacilityUsecase {
 	return &facilityUsecase{
-		facilityRepository: fr,
+		facilityRepository: r,
 	}
 }
 
 // Store 施設を登録します
-func (f *facilityUsecase) Store(ctx context.Context, facilities model.Facilities) error {
-	return f.facilityRepository.Save(ctx, facilities)
+func (u *facilityUsecase) Store(ctx context.Context, facilities model.Facilities) error {
+	return u.facilityRepository.Save(ctx, facilities)
 }
