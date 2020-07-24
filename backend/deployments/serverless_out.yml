@@ -196,7 +196,7 @@ resources:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
-                        - bucketName
+                        - ${self:custom.bucketName}
                         - "/*"
 
     CognitoUnAuthRole:
