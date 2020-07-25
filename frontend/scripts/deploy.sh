@@ -2,7 +2,8 @@
 
 npm install
 
-STAGE=${1:-dev}
+TARGET=${1:-dist}
+STAGE=${2:-dev}
 
 case "$STAGE" in
     "dev" )     ENV="development"   ;;
@@ -10,4 +11,4 @@ case "$STAGE" in
     "prod" )    ENV="production"    ;;
 esac
 
-sls deploy --env $ENV --stage $STAGE --config ./deployments/serverless.yml
+sls deploy --env $ENV --stage $STAGE --config ./deployments/serverless_$TARGET.yml
