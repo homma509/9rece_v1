@@ -17,9 +17,9 @@ clean:
 	./scripts/clean.sh
 
 deploy:
-	# usage make deploy IO=in STAGE=dev
-	$(DOCKER) run sls ./scripts/deploy.sh ${IO} ${STAGE}
+	# usage make deploy TARGET=func STAGE=dev
+	$(DOCKER) run sls ./scripts/deploy.sh ${TARGET} ${STAGE}
 
 remove:
-	# usage make remove IO=in STAGE=dev
-	$(DOCKER) run sls ./scripts/remove.sh ${IO} ${STAGE}
+	# usage make remove TARGET=func STAGE=dev
+	$(DOCKER) run sls ./scripts/remove.sh ${TARGET} ${STAGE}

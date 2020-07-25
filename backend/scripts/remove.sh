@@ -2,7 +2,7 @@
 
 npm install
 
-IO=${1:-func}
+TARGET=${1:-func}
 STAGE=${2:-dev}
 
 case "$STAGE" in
@@ -11,4 +11,4 @@ case "$STAGE" in
     "prod" )    ENV="production"    ;;
 esac
 
-sls remove --env $ENV --config ./deployments/serverless_$IO.yml --stage $STAGE
+sls remove --env $ENV --config ./deployments/serverless_$TARGET.yml --stage $STAGE
