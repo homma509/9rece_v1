@@ -1,21 +1,16 @@
-# Application configure
-
-service: nine-rece-frontend
+# Frontend configure
+service: nine-rece-front
 
 frameworkVersion: ">=1.28.0 <2.0.0"
 
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
-  runtime: nodejs12.x
   region: ${env:REGION_NAME, "ap-northeast-1"}
 
 custom:
-  projectName: 9rece-frontend-${self:provider.stage}
-  bucketName: ${self:custom.projectName}
-  s3Sync:
-    - bucketName: ${self:custom.bucketName}
-      localDir: dist/
+  projectName: 9rece-${self:provider.stage}-front
+  bucketName: 9rece-${self:provider.stage}-dist
 
 resources:
   Resources:
@@ -101,4 +96,3 @@ resources:
 
 plugins:
   - serverless-dotenv-plugin
-  - serverless-s3-sync
