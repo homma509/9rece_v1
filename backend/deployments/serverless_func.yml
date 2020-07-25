@@ -1,0 +1,111 @@
+# Lambda functions configure
+service: nine-rece-func
+
+frameworkVersion: ">=1.28.0 <2.0.0"
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  runtime: go1.x
+  region: ${env:REGION_NAME, "ap-northeast-1"}
+
+custom:
+  projectName: 9rece-${self:provider.stage}-func
+  bucketName: 9rece-${self:provider.stage}
+
+resources:
+  Resources:
+    # LambdaRole:
+    LambdaS3Role:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-LambdaS3Role
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+                  - "s3.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-LambdaS3Policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:GetItem"
+                    - "dynamodb:PutItem"
+                    - "dynamodb:Query"
+                    - "dynamodb:Scan"
+                    - "dynamodb:UpdateItem"
+                  Resource:
+                    - Fn::Join:
+                        - ":"
+                        - - "arn:aws:dynamodb"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "table/${env:DYNAMO_TABLE_NAME}"
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "log-group:/aws/lambda/*:*:*"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:GetObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - ${self:custom.bucketName}
+                        - "/*"
+
+plugins:
+  - serverless-dotenv-plugin
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./build/**
+
+functions:
+  # EFファイルのPOST
+  post_effiles:
+    name: ${self:custom.projectName}-post-effiles
+    handler: build/post_effiles/main
+    role: { Fn::GetAtt: [LambdaS3Role, Arn] }
+    events:
+      - s3:
+          bucket: ${self:custom.bucketName}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: public/effile/
+            - suffix: .txt
+          existing: true
+  # 施設ファイルのPOST
+  post_facilities:
+    name: ${self:custom.projectName}-post-facilities
+    handler: build/post_facilities/main
+    role: { Fn::GetAtt: [LambdaS3Role, Arn] }
+    events:
+      - s3:
+          bucket: ${self:custom.bucketName}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: public/facility/
+            - suffix: .txt
+          existing: true

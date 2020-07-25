@@ -1,103 +1,117 @@
-# Application configure
-
-service: nine-rece-backend-out
+# Infrastructure configure
+service: nine-rece-infra
 
 frameworkVersion: ">=1.28.0 <2.0.0"
 
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
-  runtime: go1.x
   region: ${env:REGION_NAME, "ap-northeast-1"}
 
 custom:
-  projectName: 9rece-backend-${self:provider.stage}
-  bucketName: ${self:custom.projectName}
-  appSync:
-    name: ${self:custom.projectName}
-    authenticationType: AMAZON_COGNITO_USER_POOLS
-    userPoolConfig:
-      awsRegion: ${self:provider.region}
-      userPoolId: { Ref: CognitoUserPool }
-      defaultAction: ALLOW # @aws_auth(cognito_groups: ["Admins"])を使用する場合にDENY
-    schema: ./mapping-templates/schema.graphql
-    dataSources:
-      - type: AMAZON_DYNAMODB
-        name: ${env:DYNAMO_TABLE_NAME}
-        config:
-          tableName: ${env:DYNAMO_TABLE_NAME}
-          serviceRoleArn: { Fn::GetAtt: [AppSyncRole, Arn] }
-          region: ${self:provider.region}
-    logConfig:
-      loggingRoleArn: { Fn::GetAtt: [AppSyncRole, Arn] }
-      level: ALL
-      excludeVerboseContent: false
-    mappingTemplates:
-      - dataSource: ${env:DYNAMO_TABLE_NAME}
-        type: Query
-        field: getRece
-        request: "GetRece.req.vtl"
-        response: "GetRece.res.vtl"
-      - dataSource: ${env:DYNAMO_TABLE_NAME}
-        type: Query
-        field: listReces
-        request: "ListReces.req.vtl"
-        response: "ListReces.res.vtl"
+  projectName: 9rece-${self:provider.stage}-infra
+  bucketName: 9rece-${self:provider.stage}
 
 resources:
   Resources:
-    # AppSyncRole:
-    AppSyncRole:
-      Type: AWS::IAM::Role
+    # DynamoDB
+    Table:
+      Type: AWS::DynamoDB::Table
       Properties:
-        Path: /
-        RoleName: ${self:custom.projectName}-AppSyncRole
-        AssumeRolePolicyDocument:
+        TableName: ${env:DYNAMO_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+          - AttributeName: DataType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+          - AttributeName: DataType
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    # S3
+    Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - PUT
+                - POST
+                - HEAD
+
+    # SNS
+    TopicPoint:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.projectName}-Point
+    SubscriptionPoint:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: { Fn::GetAtt: [QueuePoint, Arn] }
+        Protocol: "sqs"
+        RawMessageDelivery: True
+        Region:
+          Ref: "AWS::Region"
+        TopicArn:
+          Ref: TopicPoint
+    TopicPolicyPoint:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
           Version: "2012-10-17"
           Statement:
-            - Effect: "Allow"
+            - Sid: "TopicPolicyPoint-1"
+              Effect: "Allow"
               Principal:
-                Service: "appsync.amazonaws.com"
+                Service:
+                  - "lambda.amazonaws.com"
               Action:
-                - "sts:AssumeRole"
-        Policies:
-          - PolicyName: ${self:custom.projectName}-AppSyncPolicy
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: "Allow"
-                  Action:
-                    - "dynamodb:DeleteItem"
-                    - "dynamodb:GetItem"
-                    - "dynamodb:PutItem"
-                    - "dynamodb:Query"
-                    - "dynamodb:Scan"
-                    - "dynamodb:UpdateItem"
-                  Resource:
-                    - Fn::Join:
-                        - ":"
-                        - - "arn:aws:dynamodb"
-                          - Ref: "AWS::Region"
-                          - Ref: "AWS::AccountId"
-                          - "table/${env:DYNAMO_TABLE_NAME}"
-                    - Fn::Join:
-                        - ":"
-                        - - "arn:aws:dynamodb"
-                          - Ref: "AWS::Region"
-                          - Ref: "AWS::AccountId"
-                          - "table/${env:DYNAMO_TABLE_NAME}/*"
-                - Effect: "Allow"
-                  Action:
-                    - "logs:CreateLogGroup"
-                    - "logs:CreateLogStream"
-                    - "logs:PutLogEvents"
-                  Resource:
-                    Fn::Join:
-                      - ":"
-                      - - "arn:aws:logs"
-                        - Ref: "AWS::Region"
-                        - Ref: "AWS::AccountId"
-                        - "log-group:/aws/appsync/*:*:*"
+                - "sns:Publish"
+              Resource:
+                Ref: TopicPoint
+        Topics:
+          - Ref: TopicPoint
+
+    # SQS
+    QueuePoint:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.projectName}-Point
+        MessageRetentionPeriod: 60
+    QueuePolicyPoint:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: QueuePoint
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: "QueuePolicyPoint-1"
+              Action:
+                - "sqs:SendMessage"
+              Effect: "Allow"
+              Resource: { Fn::GetAtt: [QueuePoint, Arn] }
+              Principal:
+                Service: "sns.amazonaws.com"
+            - Sid: "QueuePolicyPoint-2"
+              Action:
+                - "sqs:ReceiveMessage"
+                - "sqs:DeleteMessage"
+                - "sqs:GetQueueAttributes"
+              Effect: "Allow"
+              Resource: { Fn::GetAtt: [QueuePoint, Arn] }
+              Principal:
+                Service: "lambda.amazonaws.com"
 
     # Cognitoの設定
     CognitoUserPool:
@@ -231,4 +245,3 @@ resources:
 
 plugins:
   - serverless-dotenv-plugin
-  - serverless-appsync-plugin
