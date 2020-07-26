@@ -9,8 +9,8 @@ provider:
   region: ${env:REGION_NAME, "ap-northeast-1"}
 
 custom:
-  projectName: 9rece-${self:provider.stage}-infra
-  bucketName: 9rece-${self:provider.stage}
+  projectName: 9rece-${self:provider.stage}
+  bucketName: ${self:custom.projectName}-post
 
 resources:
   Resources:
@@ -50,27 +50,27 @@ resources:
                 - HEAD
 
     # SNS
-    TopicPoint:
+    EFFileTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: ${self:custom.projectName}-Point
+        TopicName: ${self:custom.projectName}-EFFile
     SubscriptionPoint:
       Type: AWS::SNS::Subscription
       Properties:
-        Endpoint: { Fn::GetAtt: [QueuePoint, Arn] }
+        Endpoint: { Fn::GetAtt: [EFFileQueue, Arn] }
         Protocol: "sqs"
         RawMessageDelivery: True
         Region:
           Ref: "AWS::Region"
         TopicArn:
-          Ref: TopicPoint
-    TopicPolicyPoint:
+          Ref: EFFileTopic
+    EFFileTopicPolicy:
       Type: AWS::SNS::TopicPolicy
       Properties:
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-            - Sid: "TopicPolicyPoint-1"
+            - Sid: "EFFileTopicPolicy-1"
               Effect: "Allow"
               Principal:
                 Service:
@@ -78,38 +78,38 @@ resources:
               Action:
                 - "sns:Publish"
               Resource:
-                Ref: TopicPoint
+                Ref: EFFileTopic
         Topics:
-          - Ref: TopicPoint
+          - Ref: EFFileTopic
 
     # SQS
-    QueuePoint:
+    EFFileQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: ${self:custom.projectName}-Point
+        QueueName: ${self:custom.projectName}-EFFile
         MessageRetentionPeriod: 60
     QueuePolicyPoint:
       Type: AWS::SQS::QueuePolicy
       Properties:
         Queues:
-          - Ref: QueuePoint
+          - Ref: EFFileQueue
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-            - Sid: "QueuePolicyPoint-1"
+            - Sid: "EFFileQueuePolicy-1"
               Action:
                 - "sqs:SendMessage"
               Effect: "Allow"
-              Resource: { Fn::GetAtt: [QueuePoint, Arn] }
+              Resource: { Fn::GetAtt: [EFFileQueue, Arn] }
               Principal:
                 Service: "sns.amazonaws.com"
-            - Sid: "QueuePolicyPoint-2"
+            - Sid: "EFFileQueuePolicy-2"
               Action:
                 - "sqs:ReceiveMessage"
                 - "sqs:DeleteMessage"
                 - "sqs:GetQueueAttributes"
               Effect: "Allow"
-              Resource: { Fn::GetAtt: [QueuePoint, Arn] }
+              Resource: { Fn::GetAtt: [EFFileQueue, Arn] }
               Principal:
                 Service: "lambda.amazonaws.com"
 
@@ -177,7 +177,7 @@ resources:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-CognitoAuthRole
+        RoleName: ${self:custom.projectName}-CognitoAuth
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -193,7 +193,7 @@ resources:
                 "ForAnyValue:StringLike":
                   "cognito-identity.amazonaws.com:amr": authenticated
         Policies:
-          - PolicyName: ${self:custom.projectName}-CognitoAuthPolicy
+          - PolicyName: ${self:custom.projectName}-CognitoAuth
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -217,7 +217,7 @@ resources:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-CognitoUnAuthRole
+        RoleName: ${self:custom.projectName}-CognitoUnAuth
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -233,7 +233,7 @@ resources:
                 "ForAnyValue:StringLike":
                   "cognito-identity.amazonaws.com:amr": unauthenticated
         Policies:
-          - PolicyName: ${self:custom.projectName}-CognitoUnAuthPolicy
+          - PolicyName: ${self:custom.projectName}-CognitoUnAuth
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
