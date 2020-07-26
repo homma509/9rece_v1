@@ -60,6 +60,7 @@ type DailyClientPointMapper struct {
 	PK        string    `dynamo:"ID,hash"`
 	SK        string    `dynamo:"DataType,range"`
 	Version   uint64    `dynamo:"Version"`
+	OwnerID   string    `dynamo:"OwnerID"`
 	CreatedAt time.Time `dynamo:"CreatedAt"`
 	UpdatedAt time.Time `dynamo:"UpdatedAt"`
 }
@@ -98,6 +99,16 @@ func (m *DailyClientPointMapper) GetVersion() uint64 {
 // SetVersion Versionを設定します
 func (m *DailyClientPointMapper) SetVersion(v uint64) {
 	m.Version = v
+}
+
+// GetOwnerID 所有者IDを取得します
+func (m *DailyClientPointMapper) GetOwnerID() string {
+	return m.OwnerID
+}
+
+// SetOwnerID 所有者IDを設定します
+func (m *DailyClientPointMapper) SetOwnerID(id string) {
+	m.OwnerID = id
 }
 
 // GetCreatedAt 登録日時を取得します
