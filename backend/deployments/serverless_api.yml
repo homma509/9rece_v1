@@ -9,13 +9,13 @@ provider:
   region: ${env:REGION_NAME, "ap-northeast-1"}
 
 custom:
-  projectName: 9rece-${self:provider.stage}-api
+  projectName: 9rece-${self:provider.stage}
   appSync:
     name: ${self:custom.projectName}
     authenticationType: AMAZON_COGNITO_USER_POOLS
     userPoolConfig:
       awsRegion: ${self:provider.region}
-      userPoolId: "ap-northeast-1_665d6q5hx"
+      userPoolId: ${env:USER_POOL_ID}
       defaultAction: ALLOW # @aws_auth(cognito_groups: ["Admins"])を使用する場合にDENY
     schema: ./mapping-templates/schema.graphql
     dataSources:
@@ -43,12 +43,12 @@ custom:
 
 resources:
   Resources:
-    # AppSyncRole:
+    # AppSyncのロール:
     AppSyncRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-AppSyncRole
+        RoleName: ${self:custom.projectName}-AppSync
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -58,7 +58,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-AppSyncPolicy
+          - PolicyName: ${self:custom.projectName}-AppSync
             PolicyDocument:
               Version: "2012-10-17"
               Statement:

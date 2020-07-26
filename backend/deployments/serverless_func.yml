@@ -10,17 +10,17 @@ provider:
   region: ${env:REGION_NAME, "ap-northeast-1"}
 
 custom:
-  projectName: 9rece-${self:provider.stage}-func
-  bucketName: 9rece-${self:provider.stage}
+  projectName: 9rece-${self:provider.stage}
+  bucketName: ${self:custom.projectName}-post
 
 resources:
   Resources:
-    # LambdaRole:
-    LambdaS3Role:
+    # EFファイルのPOST Functionのロール
+    PostEFFileRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-LambdaS3Role
+        RoleName: ${self:custom.projectName}-post-effile
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -32,7 +32,65 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-LambdaS3Policy
+          - PolicyName: ${self:custom.projectName}-post-effile
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:GetItem"
+                    - "dynamodb:PutItem"
+                    - "dynamodb:Query"
+                    - "dynamodb:Scan"
+                    - "dynamodb:UpdateItem"
+                  Resource:
+                    - Fn::Join:
+                        - ":"
+                        - - "arn:aws:dynamodb"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "table/${env:DYNAMO_TABLE_NAME}"
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "log-group:/aws/lambda/*:*:*"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:GetObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - ${self:custom.bucketName}
+                        - "/*"
+
+    # 施設ファイルのPOST Functionのロール
+    PostFacilityRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-post-facility
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+                  - "s3.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-post-facility
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -83,11 +141,11 @@ package:
     - ./build/**
 
 functions:
-  # EFファイルのPOST
-  post_effiles:
-    name: ${self:custom.projectName}-post-effiles
-    handler: build/post_effiles/main
-    role: { Fn::GetAtt: [LambdaS3Role, Arn] }
+  # EFファイルのPOST Function
+  PostEFFileFunc:
+    name: ${self:custom.projectName}-post-effile
+    handler: build/post_effile/main
+    role: { Fn::GetAtt: [PostEFFileRole, Arn] }
     events:
       - s3:
           bucket: ${self:custom.bucketName}
@@ -96,11 +154,12 @@ functions:
             - prefix: public/effile/
             - suffix: .txt
           existing: true
-  # 施設ファイルのPOST
-  post_facilities:
-    name: ${self:custom.projectName}-post-facilities
-    handler: build/post_facilities/main
-    role: { Fn::GetAtt: [LambdaS3Role, Arn] }
+
+  # 施設ファイルのPOST Function
+  PostFacilityFunc:
+    name: ${self:custom.projectName}-post-facility
+    handler: build/post_facility/main
+    role: { Fn::GetAtt: [PostFacilityRole, Arn] }
     events:
       - s3:
           bucket: ${self:custom.bucketName}
