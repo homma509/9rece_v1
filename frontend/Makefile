@@ -19,10 +19,12 @@ build:
 clean:
 	./scripts/clean.sh
 
-deploy:
-	# usage make deploy TARGET=dist STAGE=dev
-	$(DOCKER) run sls ./scripts/deploy.sh ${TARGET} ${STAGE}
+deploy-front:
+	$(DOCKER) run sls ./scripts/deploy.sh front ${STAGE}
+deploy-dist:
+	$(DOCKER) run sls ./scripts/deploy.sh dist ${STAGE}
 
- remove:
-	# usage make remove TARGET=dist STAGE=dev
-	$(DOCKER) run sls ./scripts/remove.sh ${TARGET} ${STAGE}
+remove-front:
+	$(DOCKER) run sls ./scripts/remove.sh front ${STAGE}
+remove-dist:
+	$(DOCKER) run sls ./scripts/remove.sh dist ${STAGE}
