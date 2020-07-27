@@ -46,8 +46,6 @@ resources:
                 - "*"
               AllowedMethods:
                 - PUT
-                - POST
-                - HEAD
 
     # SNS
     EFFileTopic:
