@@ -47,6 +47,7 @@ func (r *DailyClientPointRepository) newDailyClientPointMapper(p model.DailyClie
 	if err == nil {
 		new.SetPK()
 		new.SetSK()
+		new.SetOwnerID(old.OwnerID)
 		new.SetCreatedAt(old.CreatedAt)
 		new.SetVersion(old.Version)
 	}

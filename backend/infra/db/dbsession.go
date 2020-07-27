@@ -24,12 +24,14 @@ type Resource interface {
 	SetPK()
 	GetSK() string
 	SetSK()
+	GetOwnerID() string
+	SetOwnerID(string)
 	GetVersion() uint64
-	SetVersion(v uint64)
+	SetVersion(uint64)
 	GetCreatedAt() time.Time
-	SetCreatedAt(t time.Time)
+	SetCreatedAt(time.Time)
 	GetUpdatedAt() time.Time
-	SetUpdatedAt(t time.Time)
+	SetUpdatedAt(time.Time)
 }
 
 // NewSession DB接続を生成します

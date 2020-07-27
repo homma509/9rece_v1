@@ -47,6 +47,7 @@ func (r *FacilityRepository) newFacilityMapper(p model.Facility) *FacilityMapper
 	if err == nil {
 		new.SetPK()
 		new.SetSK()
+		new.SetOwnerID(old.OwnerID)
 		new.SetCreatedAt(old.CreatedAt)
 		new.SetVersion(old.Version)
 	}
