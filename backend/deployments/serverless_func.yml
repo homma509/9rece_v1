@@ -15,6 +15,39 @@ custom:
 
 resources:
   Resources:
+    # URLのGET Functionのロール
+    GetUrlRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-get-url
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-get-url
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "log-group:/aws/lambda/*:*:*"
+
     # EFファイルのPOST Functionのロール
     PostEFFileRole:
       Type: AWS::IAM::Role
@@ -141,6 +174,16 @@ package:
     - ./build/**
 
 functions:
+  # URLのGET function
+  GetUrl:
+    name: ${self:custom.projectName}-get-url
+    handler: build/get_url/main
+    role: { Fn::GetAtt: [GetUrlRole, Arn] }
+    events:
+      - http:
+          path: url
+          method: get
+
   # EFファイルのPOST Function
   PostEFFileFunc:
     name: ${self:custom.projectName}-post-effile

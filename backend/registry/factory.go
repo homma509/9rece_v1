@@ -95,6 +95,15 @@ func (f *Factory) DailyClientPointController() controller.DailyClientPointContro
 	}).(controller.DailyClientPointController)
 }
 
+// URLController URLハンドラを生成します
+func (f *Factory) URLController() controller.URLController {
+	return f.container("URLController", func() interface{} {
+		return controller.NewURLController(
+			f.URLUsecase(),
+		)
+	}).(controller.URLController)
+}
+
 // FacilityUsecase 施設ユースケースを生成します
 func (f *Factory) FacilityUsecase() usecase.FacilityUsecase {
 	return f.container("FacilityUsecase", func() interface{} {
@@ -111,6 +120,13 @@ func (f *Factory) DailyClientPointUsecase() usecase.DailyClientPointUsecase {
 			f.DailyClientPointRepository(),
 		)
 	}).(usecase.DailyClientPointUsecase)
+}
+
+// URLUsecase URLユースケースを生成します
+func (f *Factory) URLUsecase() usecase.URLUsecase {
+	return f.container("URLUsecase", func() interface{} {
+		return usecase.NewURLUsecase()
+	}).(usecase.URLUsecase)
 }
 
 // FacilityRepository 施設リポジトリを生成します
