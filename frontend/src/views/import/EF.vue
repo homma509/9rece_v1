@@ -42,7 +42,7 @@ export default {
   data: () => ({
     file: null,
     loading: false,
-    errorMessage: null,
+    errorMessage: null
   }),
 
   methods: {
@@ -54,20 +54,20 @@ export default {
       this.loading = true;
 
       await Storage.put("effile/" + this.file.name, this.file, {
-        level: "public",
+        level: "public"
       })
-        .then((result) => {
+        .then(result => {
           console.log(result);
           this.file = null;
         })
-        .catch((err) => {
+        .catch(err => {
           console.log(err);
           this.errorMessage = err;
         });
 
       this.loading = false;
-    },
-  },
+    }
+  }
 };
 </script>
 
