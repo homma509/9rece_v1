@@ -3,6 +3,7 @@ import VueRouter from "vue-router";
 import Signin from "@/views/Signin";
 import Top from "@/views/Top";
 import Home from "@/views/Home";
+import UKE from "@/views/import/UKE";
 import EF from "@/views/import/EF";
 import Facility from "@/views/import/Facility";
 import List from "@/views/report/List";
@@ -20,7 +21,7 @@ const signout = (to, from, next) => {
     .then(() => {
       next("/signin");
     })
-    .catch((error) => {
+    .catch(error => {
       console.log(error);
     });
 };
@@ -29,7 +30,7 @@ let user;
 
 function getUser() {
   return Auth.currentAuthenticatedUser()
-    .then((data) => {
+    .then(data => {
       if (data && data.signInUserSession) {
         store.commit("setUser", data);
         return data;
@@ -42,7 +43,7 @@ function getUser() {
 }
 
 // ログイン状態管理
-AmplifyEventBus.$on("authState", async (state) => {
+AmplifyEventBus.$on("authState", async state => {
   if (state === "signedOut") {
     user = null;
     store.commit("setUser", null);
@@ -57,11 +58,11 @@ const routes = [
   {
     path: "/signin",
     name: "signin",
-    component: Signin,
+    component: Signin
   },
   {
     path: "/signout",
-    beforeEnter: signout,
+    beforeEnter: signout
   },
   {
     path: "/",
@@ -72,49 +73,54 @@ const routes = [
       {
         path: "/home",
         name: "home",
-        component: Home,
+        component: Home
+      },
+      {
+        path: "import/uke",
+        name: "uke",
+        component: UKE
       },
       {
         path: "import/ef",
         name: "ef",
-        component: EF,
+        component: EF
       },
       {
         path: "import/facility",
         name: "facility",
-        component: Facility,
+        component: Facility
       },
       {
         path: "report/list",
         name: "list",
-        component: List,
+        component: List
       },
       {
         path: "analystic/graph",
         name: "graph",
-        component: Graph,
-      },
-    ],
+        component: Graph
+      }
+    ]
   },
   {
     path: "*",
-    redirect: "/home",
-  },
+    redirect: "/home"
+  }
 ];
 
 // TODO setting BASE_URL
 const router = new VueRouter({
   mode: "history",
   base: process.env.BASE_URL,
-  routes,
+  routes
 });
 
 router.beforeResolve(async (to, from, next) => {
-  if (to.matched.some((record) => record.meta.requiresAuth)) {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
     user = await getUser();
     if (!user) {
       return next({
-        path: "/signin",
+        path: "/signin"
       });
     }
     return next();
