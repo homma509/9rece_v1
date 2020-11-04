@@ -52,24 +52,24 @@ func (f *File) GetObject(bucket, key string) (io.ReadCloser, error) {
 }
 
 // MoveObject ファイルを移動します
-func (f *File) MoveObject(bucket, src, dst string) error {
+func (f *File) MoveObject(srcBucket, srcKey, dstBucket, dstKey string) error {
 	err := f.connect()
 	if err != nil {
 		return err
 	}
 
 	_, err = f.client.CopyObject(&s3.CopyObjectInput{
-		Bucket:     aws.String(bucket),
-		CopySource: aws.String(fmt.Sprintf("%s/%s", bucket, src)),
-		Key:        aws.String(dst),
+		CopySource: aws.String(fmt.Sprintf("%s/%s", srcBucket, srcKey)),
+		Bucket:     aws.String(dstBucket),
+		Key:        aws.String(dstKey),
 	})
 	if err != nil {
 		return err
 	}
 
 	_, err = f.client.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(src),
+		Bucket: aws.String(srcBucket),
+		Key:    aws.String(srcKey),
 	})
 	if err != nil {
 		return err

@@ -15,17 +15,19 @@ type UkeController interface {
 // UkeFile UKEファイルのインターフェース
 type UkeFile interface {
 	GetObject(bucket, key string) (io.ReadCloser, error)
-	MoveObject(bucket, src, dst string) error
+	MoveObject(srcBucket, srcKey, dstBucket, dstKey string) error
 }
 
 type ukeController struct {
-	ukeFile UkeFile
+	ukeFile      UkeFile
+	serverBucket string
 }
 
 // NewUkeController UKEコントローラを生成します
-func NewUkeController(f UkeFile) UkeController {
+func NewUkeController(f UkeFile, serverBucket string) UkeController {
 	return &ukeController{
-		ukeFile: f,
+		ukeFile:      f,
+		serverBucket: serverBucket,
 	}
 }
 
@@ -58,7 +60,7 @@ func (c *ukeController) move(ctx context.Context, bucket, key string) error {
 	// }
 
 	// S3ファイルコピー
-	err := c.ukeFile.MoveObject(bucket, key, "uke/テスト施設_202011.uke")
+	err := c.ukeFile.MoveObject(bucket, key, c.serverBucket, "uke/テスト施設_202011.uke")
 	if err != nil {
 		return err
 	}

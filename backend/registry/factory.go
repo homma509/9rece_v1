@@ -110,6 +110,7 @@ func (f *Factory) UkeController() controller.UkeController {
 	return f.container("UkeController", func() interface{} {
 		return controller.NewUkeController(
 			f.UkeFile(),
+			f.envs.ServerBucketName(),
 		)
 	}).(controller.UkeController)
 }
