@@ -11,10 +11,63 @@ provider:
 
 custom:
   projectName: 9rece-${self:provider.stage}
-  bucketName: ${self:custom.projectName}-post
+  clientBucketName: ${self:custom.projectName}-client
+  serverBucketName: ${self:custom.projectName}-server
 
 resources:
   Resources:
+    # UKEファイルのPOST Functionのロール
+    PostUkeFileRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-post-ukefile
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+                  - "s3.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-post-ukefile
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "*"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:GetObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - ${self:custom.clientBucketName}
+                        - "/*"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:PutObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - ${self:custom.serverBucketName}
+                        - "/*"
+
     # EFファイルのPOST Functionのロール
     PostEFFileRole:
       Type: AWS::IAM::Role
@@ -62,7 +115,7 @@ resources:
                       - - "arn:aws:logs"
                         - Ref: "AWS::Region"
                         - Ref: "AWS::AccountId"
-                        - "log-group:/aws/lambda/*:*:*"
+                        - "*"
                 - Effect: "Allow"
                   Action:
                     - "s3:GetObject"
@@ -70,7 +123,7 @@ resources:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
-                        - ${self:custom.bucketName}
+                        - ${self:custom.clientBucketName}
                         - "/*"
 
     # 施設ファイルのPOST Functionのロール
@@ -120,7 +173,7 @@ resources:
                       - - "arn:aws:logs"
                         - Ref: "AWS::Region"
                         - Ref: "AWS::AccountId"
-                        - "log-group:/aws/lambda/*:*:*"
+                        - "*"
                 - Effect: "Allow"
                   Action:
                     - "s3:GetObject"
@@ -128,7 +181,7 @@ resources:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
-                        - ${self:custom.bucketName}
+                        - ${self:custom.clientBucketName}
                         - "/*"
 
 plugins:
@@ -141,6 +194,20 @@ package:
     - ./build/**
 
 functions:
+  # UKEファイルのPOST Function
+  PostUkeFileFunc:
+    name: ${self:custom.projectName}-post-ukefile
+    handler: build/post_ukefile/main
+    role: { Fn::GetAtt: [PostUkeFileRole, Arn] }
+    events:
+      - s3:
+          bucket: ${self:custom.clientBucketName}
+          event: s3:ObjectCreated:Put
+          rules:
+            - prefix: private/
+            - suffix: .uke
+          existing: true
+
   # EFファイルのPOST Function
   PostEFFileFunc:
     name: ${self:custom.projectName}-post-effile
@@ -148,7 +215,7 @@ functions:
     role: { Fn::GetAtt: [PostEFFileRole, Arn] }
     events:
       - s3:
-          bucket: ${self:custom.bucketName}
+          bucket: ${self:custom.clientBucketName}
           event: s3:ObjectCreated:*
           rules:
             - prefix: public/effile/
@@ -162,7 +229,7 @@ functions:
     role: { Fn::GetAtt: [PostFacilityRole, Arn] }
     events:
       - s3:
-          bucket: ${self:custom.bucketName}
+          bucket: ${self:custom.clientBucketName}
           event: s3:ObjectCreated:*
           rules:
             - prefix: public/facility/
