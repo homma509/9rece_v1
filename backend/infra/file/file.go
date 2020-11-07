@@ -67,13 +67,5 @@ func (f *File) MoveObject(srcBucket, srcKey, dstBucket, dstKey string) error {
 		return err
 	}
 
-	_, err = f.client.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(srcBucket),
-		Key:    aws.String(srcKey),
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
