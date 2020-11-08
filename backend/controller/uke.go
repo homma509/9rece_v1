@@ -2,9 +2,18 @@ package controller
 
 import (
 	"context"
+	"encoding/csv"
+	"errors"
+	"fmt"
 	"io"
+	"net/url"
+	"os"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/homma509/9rece/backend/domain/model"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 )
 
 // UkeController UKEコントローラのインターフェース
@@ -34,8 +43,8 @@ func NewUkeController(f UkeFile, serverBucket string) UkeController {
 // Move UKEファイルを移動します
 func (c *ukeController) Move(ctx context.Context, event events.S3Event) error {
 	for _, record := range event.Records {
-		bucket := record.S3.Bucket.Name
-		key := record.S3.Object.Key
+		bucket, _ := url.QueryUnescape(record.S3.Bucket.Name)
+		key, _ := url.QueryUnescape(record.S3.Object.Key)
 
 		err := c.move(ctx, bucket, key)
 		if err != nil {
@@ -46,60 +55,84 @@ func (c *ukeController) Move(ctx context.Context, event events.S3Event) error {
 }
 
 func (c *ukeController) move(ctx context.Context, bucket, key string) error {
-	// // S3ファイル取得
-	// f, err := c.ukeFile.GetObject(bucket, key)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer f.Close()
-
-	// // ファイル読み込み
-	// facilities, err := c.read(f)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// S3ファイルコピー
-	err := c.ukeFile.MoveObject(bucket, key, c.serverBucket, "uke/テスト施設_202011.uke")
+	// UKEファイルの読込
+	f, err := c.ukeFile.GetObject(bucket, key)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: couldn't GetObject, %v", err)
+		return err
+	}
+	defer f.Close()
+
+	// 移動先パスの取得
+	path, err := c.path(f)
+	if err != nil {
+		return err
+	}
+
+	// UKEファイルの移動
+	if err = c.ukeFile.MoveObject(bucket, key, c.serverBucket, path); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: couldn't MoveObject, %v", err)
 		return err
 	}
 
 	return nil
 }
 
-// func (c *ukeController) read(f io.ReadCloser) (model.Facilities, error) {
-// 	facilities := model.Facilities{}
+func (c *ukeController) path(f io.ReadCloser) (string, error) {
+	r := csv.NewReader(transform.NewReader(f, japanese.ShiftJIS.NewDecoder()))
+	r.Comma = ','
+	r.FieldsPerRecord = -1
+	r.ReuseRecord = true
 
-// 	r := csv.NewReader(f)
-// 	r.Comma = '\t'
-// 	r.FieldsPerRecord = 2
-// 	r.ReuseRecord = true
+	record, err := r.Read()
+	if err == io.EOF {
+		return "", errors.New("uke file EOF")
+	}
+	if err != nil {
+		return "", errors.New("uke file empty")
+	}
 
-// 	for {
-// 		record, err := r.Read()
-// 		if err == io.EOF {
-// 			break
-// 		}
-// 		if err != nil {
-// 			return nil, err
-// 		}
+	payer, err := strconv.ParseUint(record[1], 10, 8)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v, Field: , Value: ,", record[1], err)
+	}
+	prefecture, err := strconv.ParseUint(record[2], 10, 8)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v", record[2], err)
+	}
+	pointTable, err := strconv.ParseUint(record[3], 10, 8)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v", record[3], err)
+	}
+	medicalNo, err := strconv.ParseUint(record[4], 10, 32)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v", record[4], err)
+	}
+	invoiceYearMonth, err := strconv.ParseUint(record[7], 10, 32)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v", record[7], err)
+	}
+	multiVolumeID, err := strconv.ParseUint(record[8], 10, 8)
+	if err != nil {
+		return "", fmt.Errorf("%s couldn't convert number %v", record[8], err)
+	}
 
-// 		ukeID := record[0]
-// 		_, err = strconv.ParseInt(record[0], 10, 64)
-// 		if err != nil {
-// 			// UKEコードが数値以外はHeaderとみなす
-// 			continue
-// 		}
-// 		ukeName := record[1]
+	var ir model.IR
+	ir.RecordID = record[0]
+	ir.Payer = uint8(payer)
+	ir.Prefecture = uint8(prefecture)
+	ir.PointTable = uint8(pointTable)
+	ir.MedicalFacilityNo = uint32(medicalNo)
+	ir.Reserve = record[5]
+	ir.MedicalFacilityName = record[6]
+	ir.InvoiceYearMonth = uint32(invoiceYearMonth)
+	ir.MultiVolumeID = uint8(multiVolumeID)
+	ir.Phone = record[9]
 
-// 		uke := model.Uke{
-// 			UkeID:   ukeID,
-// 			UkeName: ukeName,
-// 		}
-
-// 		facilities = append(facilities, uke)
-// 	}
-
-// 	return facilities, nil
-// }
+	return fmt.Sprintf("uke/%d/%d_%s_%d.UKE",
+		ir.MedicalFacilityNo,
+		ir.MedicalFacilityNo,
+		ir.MedicalFacilityName,
+		ir.InvoiceYearMonth,
+	), nil
+}

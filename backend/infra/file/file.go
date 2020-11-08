@@ -37,7 +37,7 @@ func (f *File) connect() error {
 func (f *File) GetObject(bucket, key string) (io.ReadCloser, error) {
 	err := f.connect()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error: couldn't connect S3, %v", err)
 	}
 
 	obj, err := f.client.GetObject(&s3.GetObjectInput{
@@ -45,7 +45,12 @@ func (f *File) GetObject(bucket, key string) (io.ReadCloser, error) {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"Error: couldn't GetObject Object: %s/%s, %v",
+			*aws.String(bucket),
+			*aws.String(key),
+			err,
+		)
 	}
 
 	return obj.Body, nil

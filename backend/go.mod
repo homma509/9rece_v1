@@ -7,4 +7,5 @@ require (
 	github.com/aws/aws-sdk-go v1.33.9
 	github.com/guregu/dynamo v1.8.0
 	github.com/pkg/errors v0.9.1
+	golang.org/x/text v0.3.0
 )

@@ -37,7 +37,8 @@ resources:
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
-                - Effect: "Allow"
+                - Sid: "Sid1"
+                  Effect: "Allow"
                   Action:
                     - "logs:CreateLogGroup"
                     - "logs:CreateLogStream"
@@ -49,16 +50,19 @@ resources:
                         - Ref: "AWS::Region"
                         - Ref: "AWS::AccountId"
                         - "*"
-                - Effect: "Allow"
+                - Sid: "Sid2"
+                  Effect: "Allow"
                   Action:
                     - "s3:GetObject"
+                    - "s3:ListBucket"
                   Resource:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
                         - ${self:custom.clientBucketName}
                         - "/*"
-                - Effect: "Allow"
+                - Sid: "Sid3"
+                  Effect: "Allow"
                   Action:
                     - "s3:PutObject"
                   Resource:
@@ -205,7 +209,7 @@ functions:
           event: s3:ObjectCreated:Put
           rules:
             - prefix: private/
-            - suffix: .uke
+            - suffix: .UKE
           existing: true
 
   # EFファイルのPOST Function
