@@ -37,3 +37,8 @@ func (e *Envs) DynamoTableName() string {
 func (e *Envs) RegionName() string {
 	return e.env("REGION_NAME")
 }
+
+// ServerBucketName サーバー用のバケット名
+func (e *Envs) ServerBucketName() string {
+	return e.env("SERVER_BUCKET_NAME")
+}

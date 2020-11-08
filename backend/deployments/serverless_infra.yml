@@ -10,7 +10,8 @@ provider:
 
 custom:
   projectName: 9rece-${self:provider.stage}
-  bucketName: ${self:custom.projectName}-post
+  clientBucketName: ${self:custom.projectName}-client
+  serverBucketName: ${self:custom.projectName}-server
 
 resources:
   Resources:
@@ -34,10 +35,10 @@ resources:
           WriteCapacityUnits: 1
 
     # S3
-    Bucket:
+    ClientBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:custom.bucketName}
+        BucketName: ${self:custom.clientBucketName}
         CorsConfiguration:
           CorsRules:
             - AllowedOrigins:
@@ -48,6 +49,10 @@ resources:
                 - PUT
                 - POST
                 - HEAD
+    ServerBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.serverBucketName}
 
     # SNS
     EFFileTopic:
@@ -210,7 +215,7 @@ resources:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
-                        - ${self:custom.bucketName}
+                        - ${self:custom.clientBucketName}
                         - "/*"
 
     CognitoUnAuthRole:

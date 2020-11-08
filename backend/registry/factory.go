@@ -75,6 +75,16 @@ func (f *Factory) DailyClientPointFile() controller.DailyClientPointFile {
 	}).(controller.DailyClientPointFile)
 }
 
+// UkeFile UKEファイルを生成します
+func (f *Factory) UkeFile() controller.UkeFile {
+	return f.container("UkeFile", func() interface{} {
+		config := &aws.Config{
+			Region: aws.String(f.envs.RegionName()),
+		}
+		return file.NewFile(config)
+	}).(controller.UkeFile)
+}
+
 // FacilityController 施設ハンドラを生成します
 func (f *Factory) FacilityController() controller.FacilityController {
 	return f.container("FacilityController", func() interface{} {
@@ -93,6 +103,16 @@ func (f *Factory) DailyClientPointController() controller.DailyClientPointContro
 			f.DailyClientPointFile(),
 		)
 	}).(controller.DailyClientPointController)
+}
+
+// UkeController UKEハンドラを生成します
+func (f *Factory) UkeController() controller.UkeController {
+	return f.container("UkeController", func() interface{} {
+		return controller.NewUkeController(
+			f.UkeFile(),
+			f.envs.ServerBucketName(),
+		)
+	}).(controller.UkeController)
 }
 
 // FacilityUsecase 施設ユースケースを生成します
