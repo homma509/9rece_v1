@@ -2,33 +2,45 @@ package logger
 
 import (
 	"log"
-	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-// type logger interface {
-// 	Infof(format string, args ...interface{})
-// 	Warnf(format string, args ...interface{})
-// 	Errorf(format string, args ...interface{})
-// }
-
-var l = &stdLogger{
-	stdout: log.New(os.Stdout, "", 0),
-	stderr: log.New(os.Stderr, "", 0),
+// NewLogger Loggerの生成
+func NewLogger() *zap.Logger {
+	logger, err := newConfig().Build()
+	if err != nil {
+		log.Fatalf(
+			"Level: %s, Msg: %s, Error: %v",
+			"FATAL",
+			"couldn't create logger config",
+			err,
+		)
+	}
+	return logger
 }
 
-type stdLogger struct {
-	stderr *log.Logger
-	stdout *log.Logger
-}
+func newConfig() *zap.Config {
+	level := zap.NewAtomicLevel()
+	level.SetLevel(zapcore.DebugLevel)
 
-func Infof(format string, args ...interface{}) {
-	l.stdout.Printf(format, args...)
-}
-
-func Warnf(format string, args ...interface{}) {
-	l.stderr.Printf(format, args...)
-}
-
-func Errorf(format string, args ...interface{}) {
-	l.stderr.Printf(format, args...)
+	return &zap.Config{
+		Level:    level,
+		Encoding: "json",
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:        "Time",
+			LevelKey:       "Level",
+			NameKey:        "Name",
+			CallerKey:      "Caller",
+			MessageKey:     "Msg",
+			StacktraceKey:  "St",
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
 }

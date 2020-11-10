@@ -5,7 +5,9 @@ import (
 	"github.com/homma509/9rece/backend/controller"
 	"github.com/homma509/9rece/backend/infra/db"
 	"github.com/homma509/9rece/backend/infra/file"
+	"github.com/homma509/9rece/backend/logger"
 	"github.com/homma509/9rece/backend/usecase"
+	"go.uber.org/zap"
 )
 
 var factory *Factory
@@ -39,6 +41,13 @@ func (f *Factory) container(key string, builder func() interface{}) interface{} 
 		f.cache[key] = builder()
 	}
 	return f.cache[key]
+}
+
+// Logger Loggerの生成
+func (f *Factory) Logger() *zap.Logger {
+	return f.container("Logger", func() interface{} {
+		return logger.NewLogger()
+	}).(*zap.Logger)
 }
 
 // Session DB接続を生成します
