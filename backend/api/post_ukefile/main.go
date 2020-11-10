@@ -5,32 +5,31 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/homma509/9rece/backend/log"
 	"github.com/homma509/9rece/backend/registry"
-	"go.uber.org/zap"
 )
 
 func handler(ctx context.Context, event events.S3Event) error {
-	var logger = registry.Creater().Logger()
 	// lc, _ := lambdacontext.FromContext(ctx)
-	logger.Info(
-		"start lambda function",
-		zap.Any("S3Event", event),
+	log.AppLogger.Info(
+		"Message", "start lambda function",
+		"S3Event", event,
 		// "CognitoIdentityID", lc.Identity.CognitoIdentityID,
 		// "CognitoIdentityPoolID", lc.Identity.CognitoIdentityPoolID,
 	)
 
 	err := registry.Creater().UkeController().Move(ctx, event)
 	if err != nil {
-		logger.Sugar().Errorw(
-			"error lambda function",
-			zap.String("Result", "error"),
-			zap.Error(err),
+		log.AppLogger.Error(
+			"Message", "error lambda function",
+			"Result", "failure",
+			"Error", err,
 		)
 	}
 
-	logger.Info(
-		"end lambda function",
-		zap.String("Result", "successful"),
+	log.AppLogger.Info(
+		"Message", "end lambda function",
+		"Result", "successful",
 	)
 
 	return err
