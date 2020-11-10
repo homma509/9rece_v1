@@ -12,7 +12,7 @@ import (
 func handler(ctx context.Context, event events.S3Event) error {
 	// lc, _ := lambdacontext.FromContext(ctx)
 	log.AppLogger.Info(
-		"Message", "start lambda function",
+		"start lambda function",
 		"S3Event", event,
 		// "CognitoIdentityID", lc.Identity.CognitoIdentityID,
 		// "CognitoIdentityPoolID", lc.Identity.CognitoIdentityPoolID,
@@ -21,14 +21,14 @@ func handler(ctx context.Context, event events.S3Event) error {
 	err := registry.Creater().UkeController().Move(ctx, event)
 	if err != nil {
 		log.AppLogger.Error(
-			"Message", "error lambda function",
+			"error lambda function",
 			"Result", "failure",
 			"Error", err,
 		)
 	}
 
 	log.AppLogger.Info(
-		"Message", "end lambda function",
+		"end lambda function",
 		"Result", "successful",
 	)
 

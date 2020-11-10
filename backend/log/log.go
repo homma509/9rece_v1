@@ -31,14 +31,14 @@ func newLogger() Logger {
 
 // Info Infoレベルのログ出力
 func (l *appLogger) Info(args ...interface{}) {
-	args = append([]interface{}{"Level", "INFO"}, args...)
+	args = append([]interface{}{"Level", "INFO", "Message"}, args...)
 	format := format(len(args) / 2)
 	l.stdout.Printf(format, args...)
 }
 
 // Error Errorレベルのログ出力
 func (l *appLogger) Error(args ...interface{}) {
-	args = append([]interface{}{"Level", "ERROR"}, args...)
+	args = append([]interface{}{"Level", "ERROR", "Message"}, args...)
 	format := format(len(args) / 2)
 	l.stderr.Printf(format, args...)
 }
