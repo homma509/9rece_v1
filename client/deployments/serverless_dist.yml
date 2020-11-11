@@ -1,0 +1,18 @@
+# Client configure
+service: nine-rece-dist
+
+frameworkVersion: ">=1.28.0 <2.0.0"
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${env:REGION_NAME, "ap-northeast-1"}
+
+custom:
+  bucketName: 9rece-${self:provider.stage}-dist
+  s3Sync:
+    - bucketName: ${self:custom.bucketName}
+      localDir: dist/
+
+plugins:
+  - serverless-s3-sync
