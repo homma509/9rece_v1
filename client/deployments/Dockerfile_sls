@@ -1,4 +1,4 @@
-FROM amaysim/serverless:1.74.1
+FROM amaysim/serverless:2.11.0
 
 WORKDIR /opt/app
 COPY . /opt/app
