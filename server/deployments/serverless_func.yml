@@ -16,12 +16,12 @@ custom:
 
 resources:
   Resources:
-    # UKEファイルのPOST Functionのロール
-    PostUkeFileRole:
+    # UKEファイルのPut Functionのロール
+    PutUkeFileRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-post-ukefile
+        RoleName: ${self:custom.projectName}-put-ukefile
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -33,7 +33,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-post-ukefile
+          - PolicyName: ${self:custom.projectName}-put-ukefile
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -198,11 +198,12 @@ package:
     - ./build/**
 
 functions:
-  # UKEファイルのPOST Function
-  PostUkeFileFunc:
-    name: ${self:custom.projectName}-post-ukefile
-    handler: build/post_ukefile/main
-    role: { Fn::GetAtt: [PostUkeFileRole, Arn] }
+  # UKEファイルのPut Function
+  PutUkeFileFunc:
+    name: ${self:custom.projectName}-put-ukefile
+    handler: build/s3/put_ukefile/main
+    role: { Fn::GetAtt: [PutUkeFileRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}
@@ -217,6 +218,7 @@ functions:
     name: ${self:custom.projectName}-post-effile
     handler: build/post_effile/main
     role: { Fn::GetAtt: [PostEFFileRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}
@@ -231,6 +233,7 @@ functions:
     name: ${self:custom.projectName}-post-facility
     handler: build/post_facility/main
     role: { Fn::GetAtt: [PostFacilityRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}
