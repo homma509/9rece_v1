@@ -46,7 +46,7 @@ func (l *appLogger) Error(args ...interface{}) {
 func format(len int) string {
 	var fields = make([]string, len, len)
 	for i := range fields {
-		fields[i] = "%s: %v"
+		fields[i] = "%s: %+v"
 	}
 	return strings.Join(fields, "\t")
 }

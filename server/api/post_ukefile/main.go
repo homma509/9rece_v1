@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/homma509/9rece/server/log"
 	"github.com/homma509/9rece/server/registry"
+	"golang.org/x/xerrors"
 )
 
 func handler(ctx context.Context, event events.S3Event) error {
@@ -20,11 +21,13 @@ func handler(ctx context.Context, event events.S3Event) error {
 
 	err := registry.Creater().UkeController().Move(ctx, event)
 	if err != nil {
+		err = xerrors.Errorf("on handler: %w", err)
 		log.AppLogger.Error(
 			"error lambda function",
 			"Result", "failure",
 			"Error", err,
 		)
+		return err
 	}
 
 	log.AppLogger.Info(
@@ -32,7 +35,7 @@ func handler(ctx context.Context, event events.S3Event) error {
 		"Result", "successful",
 	)
 
-	return err
+	return nil
 }
 
 func main() {
