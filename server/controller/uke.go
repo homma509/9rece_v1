@@ -3,17 +3,16 @@ package controller
 import (
 	"context"
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/homma509/9rece/server/domain/model"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"
+	"golang.org/x/xerrors"
 )
 
 // UkeController UKEコントローラのインターフェース
@@ -48,7 +47,7 @@ func (c *ukeController) Move(ctx context.Context, event events.S3Event) error {
 
 		err := c.move(ctx, bucket, key)
 		if err != nil {
-			return err
+			return xerrors.Errorf("on Move bucket %s key %s: %w", bucket, key, err)
 		}
 	}
 	return nil
@@ -58,21 +57,19 @@ func (c *ukeController) move(ctx context.Context, bucket, key string) error {
 	// UKEファイルの読込
 	f, err := c.ukeFile.GetObject(bucket, key)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: couldn't GetObject, %v", err)
-		return err
+		return xerrors.Errorf("on move.GetObject: %w", err)
 	}
 	defer f.Close()
 
 	// 移動先パスの取得
 	path, err := c.path(f)
 	if err != nil {
-		return err
+		return xerrors.Errorf("on move.path: %w", err)
 	}
 
 	// UKEファイルの移動
 	if err = c.ukeFile.MoveObject(bucket, key, c.serverBucket, path); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: couldn't MoveObject, %v", err)
-		return err
+		return xerrors.Errorf("on move.MoveObject: %w", err)
 	}
 
 	return nil
@@ -86,35 +83,35 @@ func (c *ukeController) path(f io.ReadCloser) (string, error) {
 
 	record, err := r.Read()
 	if err == io.EOF {
-		return "", errors.New("uke file EOF")
+		return "", xerrors.Errorf("on path.Read uke file EOF: %w", err)
 	}
 	if err != nil {
-		return "", errors.New("uke file empty")
+		return "", xerrors.Errorf("on path.Read uke file empty: %w", err)
 	}
 
 	payer, err := strconv.ParseUint(record[1], 10, 8)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v, Field: , Value: ,", record[1], err)
+		return "", xerrors.Errorf("on path.ParseUnit Payer couldn't convert number from %v: %w", record[1], err)
 	}
 	prefecture, err := strconv.ParseUint(record[2], 10, 8)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v", record[2], err)
+		return "", xerrors.Errorf("on path.ParseUnit Prefecture couldn't convert number from %v: %w", record[2], err)
 	}
 	pointTable, err := strconv.ParseUint(record[3], 10, 8)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v", record[3], err)
+		return "", xerrors.Errorf("on path.ParseUnit PointTable couldn't convert number from %v: %w", record[3], err)
 	}
 	medicalNo, err := strconv.ParseUint(record[4], 10, 32)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v", record[4], err)
+		return "", xerrors.Errorf("on path.ParseUnit MedicalNo couldn't convert number from %v: %w", record[4], err)
 	}
 	invoiceYearMonth, err := strconv.ParseUint(record[7], 10, 32)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v", record[7], err)
+		return "", xerrors.Errorf("on path.ParseUnit InvoiceYearMonth couldn't convert number from %v: %w", record[7], err)
 	}
 	multiVolumeID, err := strconv.ParseUint(record[8], 10, 8)
 	if err != nil {
-		return "", fmt.Errorf("%s couldn't convert number %v", record[8], err)
+		return "", xerrors.Errorf("on path.ParseUnit MultiVolumeID couldn't convert number from %v: %w", record[8], err)
 	}
 
 	var ir model.IR
