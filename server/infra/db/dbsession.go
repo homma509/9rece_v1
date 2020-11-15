@@ -19,17 +19,9 @@ type Session struct {
 
 // Resource DBリソースの構造体
 type Resource interface {
-	EntityName() string
-	GetPK() string
-	SetPK()
-	GetSK() string
-	SetSK()
-	GetVersion() uint64
-	SetVersion(v uint64)
-	GetCreatedAt() time.Time
+	SetID()
+	SetMetadata()
 	SetCreatedAt(t time.Time)
-	GetUpdatedAt() time.Time
-	SetUpdatedAt(t time.Time)
 }
 
 // NewSession DB接続を生成します
@@ -67,10 +59,7 @@ func (s *Session) connectTable() error {
 
 // PutResource リソースをDBに登録します
 func (s *Session) PutResource(r Resource) error {
-	if s.isNewEntity(r) {
-		return s.insertResource(r)
-	}
-	return s.updateResource(r)
+	return s.insertResource(r)
 }
 
 // PutResources リソースのスライスをDBに登録します
@@ -83,44 +72,8 @@ func (s *Session) PutResources(rs []Resource) error {
 	return nil
 }
 
-func (s *Session) isNewEntity(r Resource) bool {
-	return r.GetVersion() == 0
-}
-
-// GetResource リソースをDBから取得します
-func (s *Session) GetResource(r Resource, ret interface{}) error {
-	err := s.connectTable()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	err = s.table.
-		Get("ID", r.GetPK()).
-		Range("DataType", dynamo.Equal, r.GetSK()).
-		One(ret)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
 func (s *Session) insertResource(r Resource) error {
 	query, err := s.buildQueryInsert(r)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	err = query.Run()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func (s *Session) updateResource(r Resource) error {
-	query, err := s.buildQueryUpdate(r)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -139,27 +92,9 @@ func (s *Session) buildQueryInsert(r Resource) (*dynamo.Put, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	r.SetPK()
-	r.SetSK()
-	r.SetVersion(1)
+	r.SetID()
+	r.SetMetadata()
 	r.SetCreatedAt(time.Now())
-	r.SetUpdatedAt(time.Now())
-
-	query := s.table.Put(r)
-
-	return query, nil
-}
-
-func (s *Session) buildQueryUpdate(r Resource) (*dynamo.Put, error) {
-	err := s.connectTable()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	oldVersion := r.GetVersion()
-
-	r.SetVersion(oldVersion + 1)
-	r.SetUpdatedAt(time.Now())
 
 	query := s.table.Put(r)
 

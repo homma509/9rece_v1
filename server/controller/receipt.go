@@ -12,7 +12,7 @@ import (
 // ReceiptController レセプトコントローラのインターフェース
 type ReceiptController interface {
 	Move(context.Context, events.S3Event) error
-	// Store(context.Context, events.S3Event) error
+	Store(context.Context, events.S3Event) error
 }
 
 type receiptController struct {
@@ -35,6 +35,20 @@ func (c *receiptController) Move(ctx context.Context, event events.S3Event) erro
 		err := c.usecase.Move(ctx, bucket, key)
 		if err != nil {
 			return xerrors.Errorf("on Move bucket %s key %s: %w", bucket, key, err)
+		}
+	}
+	return nil
+}
+
+// Store レセプトファイルの登録
+func (c *receiptController) Store(ctx context.Context, event events.S3Event) error {
+	for _, record := range event.Records {
+		bucket, _ := url.QueryUnescape(record.S3.Bucket.Name)
+		key, _ := url.QueryUnescape(record.S3.Object.Key)
+
+		err := c.usecase.Store(ctx, bucket, key)
+		if err != nil {
+			return xerrors.Errorf("on Store bucket %s key %s: %w", bucket, key, err)
 		}
 	}
 	return nil

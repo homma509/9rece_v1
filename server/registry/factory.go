@@ -136,8 +136,9 @@ func (f *Factory) DailyClientPointUsecase() usecase.DailyClientPointUsecase {
 func (f *Factory) ReceiptUsecase() usecase.ReceiptUsecase {
 	return f.container("ReceiptUsecase", func() interface{} {
 		return usecase.NewReceiptUsecase(
-			f.ReceiptFile(),
 			f.envs.ServerBucketName(),
+			f.ReceiptFile(),
+			f.ReceiptRepository(),
 		)
 	}).(usecase.ReceiptUsecase)
 }
@@ -158,4 +159,13 @@ func (f *Factory) DailyClientPointRepository() *db.DailyClientPointRepository {
 			f.Session(),
 		)
 	}).(*db.DailyClientPointRepository)
+}
+
+// ReceiptRepository レセプトリポジトリを生成します
+func (f *Factory) ReceiptRepository() *db.ReceiptRepository {
+	return f.container("ReceiptRepository", func() interface{} {
+		return db.NewReceiptRepository(
+			f.Session(),
+		)
+	}).(*db.ReceiptRepository)
 }
