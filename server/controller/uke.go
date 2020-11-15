@@ -18,6 +18,7 @@ import (
 // UkeController UKEコントローラのインターフェース
 type UkeController interface {
 	Move(context.Context, events.S3Event) error
+	// Read(context.Context, events.S3Event) error
 }
 
 // UkeFile UKEファイルのインターフェース
@@ -31,7 +32,7 @@ type ukeController struct {
 	serverBucket string
 }
 
-// NewUkeController UKEコントローラを生成します
+// NewUkeController UKEコントローラの生成
 func NewUkeController(f UkeFile, serverBucket string) UkeController {
 	return &ukeController{
 		ukeFile:      f,
@@ -39,7 +40,7 @@ func NewUkeController(f UkeFile, serverBucket string) UkeController {
 	}
 }
 
-// Move UKEファイルを移動します
+// Move UKEファイルの移動
 func (c *ukeController) Move(ctx context.Context, event events.S3Event) error {
 	for _, record := range event.Records {
 		bucket, _ := url.QueryUnescape(record.S3.Bucket.Name)
@@ -52,6 +53,20 @@ func (c *ukeController) Move(ctx context.Context, event events.S3Event) error {
 	}
 	return nil
 }
+
+// // Read UKEファイルの読み込み
+// func (c *ukeController) Read(ctx context.Context, event events.S3Event) error {
+// 	for _, record := range event.Records {
+// 		bucket, _ := url.QueryUnescape(record.S3.Bucket.Name)
+// 		key, _ := url.QueryUnescape(record.S3.Object.Key)
+
+// 		err := c.read(ctx, bucket, key)
+// 		if err != nil {
+// 			return xerrors.Errorf("on Read bucket %s key %s: %w", bucket, key, err)
+// 		}
+// 	}
+// 	return nil
+// }
 
 func (c *ukeController) move(ctx context.Context, bucket, key string) error {
 	// UKEファイルの読込
@@ -93,43 +108,27 @@ func (c *ukeController) path(f io.ReadCloser) (string, error) {
 	if err != nil {
 		return "", xerrors.Errorf("on path.ParseUnit Payer couldn't convert number from %v: %w", record[1], err)
 	}
-	prefecture, err := strconv.ParseUint(record[2], 10, 8)
-	if err != nil {
-		return "", xerrors.Errorf("on path.ParseUnit Prefecture couldn't convert number from %v: %w", record[2], err)
-	}
 	pointTable, err := strconv.ParseUint(record[3], 10, 8)
 	if err != nil {
 		return "", xerrors.Errorf("on path.ParseUnit PointTable couldn't convert number from %v: %w", record[3], err)
 	}
-	medicalNo, err := strconv.ParseUint(record[4], 10, 32)
-	if err != nil {
-		return "", xerrors.Errorf("on path.ParseUnit MedicalNo couldn't convert number from %v: %w", record[4], err)
-	}
-	invoiceYearMonth, err := strconv.ParseUint(record[7], 10, 32)
-	if err != nil {
-		return "", xerrors.Errorf("on path.ParseUnit InvoiceYearMonth couldn't convert number from %v: %w", record[7], err)
-	}
-	multiVolumeID, err := strconv.ParseUint(record[8], 10, 8)
-	if err != nil {
-		return "", xerrors.Errorf("on path.ParseUnit MultiVolumeID couldn't convert number from %v: %w", record[8], err)
-	}
 
 	var ir model.IR
-	ir.RecordID = record[0]
+	ir.RecordType = record[0]
 	ir.Payer = uint8(payer)
-	ir.Prefecture = uint8(prefecture)
+	ir.Prefecture = record[2]
 	ir.PointTable = uint8(pointTable)
-	ir.MedicalFacilityNo = uint32(medicalNo)
+	ir.FacilityID = record[4]
 	ir.Reserve = record[5]
-	ir.MedicalFacilityName = record[6]
-	ir.InvoiceYearMonth = uint32(invoiceYearMonth)
-	ir.MultiVolumeID = uint8(multiVolumeID)
+	ir.FacilityName = record[6]
+	ir.InvoiceYM = record[7]
+	ir.MultiVolumeNo = record[8]
 	ir.Phone = record[9]
 
 	return fmt.Sprintf("uke/%d/%d_%s_%d.UKE",
-		ir.MedicalFacilityNo,
-		ir.MedicalFacilityNo,
-		ir.MedicalFacilityName,
-		ir.InvoiceYearMonth,
+		ir.FacilityID,
+		ir.FacilityID,
+		ir.FacilityName,
+		ir.InvoiceYM,
 	), nil
 }

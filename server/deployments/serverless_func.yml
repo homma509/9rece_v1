@@ -17,11 +17,11 @@ custom:
 resources:
   Resources:
     # UKEファイルのPut Functionのロール
-    PutUkeFileRole:
+    PutUkeRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-put-ukefile
+        RoleName: ${self:custom.projectName}-put-uke
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -33,7 +33,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-put-ukefile
+          - PolicyName: ${self:custom.projectName}-put-uke
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -199,10 +199,10 @@ package:
 
 functions:
   # UKEファイルのPut Function
-  PutUkeFileFunc:
-    name: ${self:custom.projectName}-put-ukefile
-    handler: build/s3/put_ukefile/main
-    role: { Fn::GetAtt: [PutUkeFileRole, Arn] }
+  PutUkeFunc:
+    name: ${self:custom.projectName}-put-uke
+    handler: build/s3/put_uke/main
+    role: { Fn::GetAtt: [PutUkeRole, Arn] }
     maximumRetryAttempts: 0
     events:
       - s3:
