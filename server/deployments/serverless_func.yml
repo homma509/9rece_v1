@@ -16,12 +16,12 @@ custom:
 
 resources:
   Resources:
-    # UKEファイルのPut Functionのロール
-    PutUkeRole:
+    # レセプトファイルのPut Functionのロール
+    PutReceiptRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-put-uke
+        RoleName: ${self:custom.projectName}-put-receipt
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -33,7 +33,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-put-uke
+          - PolicyName: ${self:custom.projectName}-put-receipt
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -198,11 +198,11 @@ package:
     - ./build/**
 
 functions:
-  # UKEファイルのPut Function
-  PutUkeFunc:
-    name: ${self:custom.projectName}-put-uke
-    handler: build/s3/put_uke/main
-    role: { Fn::GetAtt: [PutUkeRole, Arn] }
+  # レセプトファイルのPut Function
+  PutReceiptFunc:
+    name: ${self:custom.projectName}-put-receipt
+    handler: build/s3/put_receipt/main
+    role: { Fn::GetAtt: [PutReceiptRole, Arn] }
     maximumRetryAttempts: 0
     events:
       - s3:

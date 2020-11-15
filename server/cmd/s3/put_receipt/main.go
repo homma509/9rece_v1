@@ -19,7 +19,7 @@ func handler(ctx context.Context, event events.S3Event) error {
 		// "CognitoIdentityPoolID", lc.Identity.CognitoIdentityPoolID,
 	)
 
-	err := registry.Creater().UkeController().Move(ctx, event)
+	err := registry.Creater().ReceiptController().Move(ctx, event)
 	if err != nil {
 		err = xerrors.Errorf("on handler: %w", err)
 		log.AppLogger.Error(

@@ -1,6 +1,6 @@
 package model
 
-// Receipt Receiptファイル
+// Receipt レセプト
 type Receipt struct {
 	IR           IR            // 医療機関情報
 	ReceiptItems []ReceiptItem // レセプト明細
