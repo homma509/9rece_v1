@@ -1,5 +1,10 @@
 package model
 
+const (
+	// IRRecordType 医療機関情報レコードのレコード識別情報
+	IRRecordType = "IR"
+)
+
 // IR 医療機関情報レコード
 type IR struct {
 	RecordType    string // レコード識別情報

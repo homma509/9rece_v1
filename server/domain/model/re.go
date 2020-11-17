@@ -1,7 +1,24 @@
 package model
 
+const (
+	// RERecordType レセプト共通レコードのレコード識別情報
+	RERecordType = "RE"
+)
+
+// REer レセプト共通レコードインターフェス
+type REer interface {
+	GetFacilityID() string
+	GetInvoiceYM() string
+	GetIndex() uint64
+	GetReceiptNo() uint32
+}
+
 // RE レセプト共通レコード
 type RE struct {
+	FacilityID string `dynamo:"-"` // 医療機関コード
+	InvoiceYM  string `dynamo:"-"` // 請求年月
+	Index      uint64 `dynamo:"-"` // インデックス
+
 	RecordType   string // レコード識別情報
 	ReceiptNo    uint32 // レセプト番号
 	ReceiptType  string // レセプト種別
@@ -40,4 +57,24 @@ type RE struct {
 	Disease3     uint16 // 診療科3 特定疾病
 	Kana         string // カタナカ（氏名）
 	Condition    string // 患者の状態
+}
+
+// GetFacilityID 医療機関コード
+func (re *RE) GetFacilityID() string {
+	return re.FacilityID
+}
+
+// GetInvoiceYM 請求年月
+func (re *RE) GetInvoiceYM() string {
+	return re.InvoiceYM
+}
+
+// GetIndex インデックス
+func (re *RE) GetIndex() uint64 {
+	return re.Index
+}
+
+// GetReceiptNo レセプト番号
+func (re *RE) GetReceiptNo() uint32 {
+	return re.ReceiptNo
 }
