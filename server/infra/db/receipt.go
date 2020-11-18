@@ -24,22 +24,25 @@ func NewReceiptRepository(sess *Session) *ReceiptRepository {
 // Save レセプトの登録
 func (r *ReceiptRepository) Save(ctx context.Context, m *model.Receipt) error {
 	// TODO 登録前に全削除を実施し、冪等にする
-	err := r.sess.PutResource(r.newReceiptMapper(m))
+
+	err := r.sess.PutResource(r.newIRMapper(*m.IR))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
+	// TODO IR以降のデータ処理
+
 	return nil
 }
 
-func (r *ReceiptRepository) newReceiptMapper(m *model.Receipt) *ReceiptMapper {
-	return &ReceiptMapper{
-		IR: *m.IR,
+func (r *ReceiptRepository) newIRMapper(m model.IR) *IRMapper {
+	return &IRMapper{
+		m,
 	}
 }
 
-// ReceiptMapper レセプトモデルのリソースへのマッパー構造体
-type ReceiptMapper struct {
+// IRMapper IRモデルのリソースへのマッパー構造体
+type IRMapper struct {
 	model.IR
 	ID        string    `dynamo:"ID,hash"`
 	Metadata  string    `dynamo:"Metadata,range"`
@@ -47,26 +50,26 @@ type ReceiptMapper struct {
 }
 
 // GetID IDの取得
-func (m *ReceiptMapper) GetID() string {
+func (m *IRMapper) GetID() string {
 	return fmt.Sprintf("%s#%s", m.FacilityID, m.InvoiceYM)
 }
 
 // SetID IDの 設定
-func (m *ReceiptMapper) SetID() {
+func (m *IRMapper) SetID() {
 	m.ID = m.GetID()
 }
 
 // GetMetadata Metadataの取得
-func (m *ReceiptMapper) GetMetadata() string {
+func (m *IRMapper) GetMetadata() string {
 	return fmt.Sprintf("%d", m.Payer)
 }
 
 // SetMetadata Metadataの設定
-func (m *ReceiptMapper) SetMetadata() {
+func (m *IRMapper) SetMetadata() {
 	m.Metadata = m.GetMetadata()
 }
 
 // SetCreatedAt 登録日時の設定
-func (m *ReceiptMapper) SetCreatedAt(t time.Time) {
+func (m *IRMapper) SetCreatedAt(t time.Time) {
 	m.CreatedAt = t
 }
