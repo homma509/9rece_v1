@@ -25,7 +25,7 @@ func NewReceiptRepository(sess *Session) *ReceiptRepository {
 func (r *ReceiptRepository) Save(ctx context.Context, m *model.Receipt) error {
 	// TODO 登録前に全削除を実施し、冪等にする
 
-	err := r.sess.PutResource(r.newIRMapper(*m.IR))
+	err := r.sess.PutResource(newIRMapper(*m.IR))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -35,9 +35,9 @@ func (r *ReceiptRepository) Save(ctx context.Context, m *model.Receipt) error {
 	return nil
 }
 
-func (r *ReceiptRepository) newIRMapper(m model.IR) *IRMapper {
+func newIRMapper(m model.IR) *IRMapper {
 	return &IRMapper{
-		m,
+		IR: m,
 	}
 }
 
