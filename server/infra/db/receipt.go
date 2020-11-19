@@ -30,7 +30,11 @@ func (r *ReceiptRepository) Save(ctx context.Context, m *model.Receipt) error {
 		return errors.WithStack(err)
 	}
 
-	// TODO IR以降のデータ処理
+	for _, item := range m.ReceiptItems {
+		if err := r.sess.PutResource(newREMapper(*item.RE)); err != nil {
+			return errors.WithStack(err)
+		}
+	}
 
 	return nil
 }
@@ -71,5 +75,44 @@ func (m *IRMapper) SetMetadata() {
 
 // SetCreatedAt 登録日時の設定
 func (m *IRMapper) SetCreatedAt(t time.Time) {
+	m.CreatedAt = t
+}
+
+func newREMapper(m model.RE) *REMapper {
+	return &REMapper{
+		RE: m,
+	}
+}
+
+// REMapper REerモデルのリソースへのマッパー構造体
+type REMapper struct {
+	model.RE
+	ID        string    `dynamo:"ID,hash"`
+	Metadata  string    `dynamo:"Metadata,range"`
+	CreatedAt time.Time `dynamo:"CreatedAt"`
+}
+
+// GetID IDの取得
+func (m *REMapper) GetID() string {
+	return fmt.Sprintf("%s#%s", m.GetFacilityID(), m.GetInvoiceYM())
+}
+
+// SetID IDの 設定
+func (m *REMapper) SetID() {
+	m.ID = m.GetID()
+}
+
+// GetMetadata Metadataの取得
+func (m *REMapper) GetMetadata() string {
+	return fmt.Sprintf("%d#%d", m.GetReceiptNo(), m.GetIndex())
+}
+
+// SetMetadata Metadataの設定
+func (m *REMapper) SetMetadata() {
+	m.Metadata = m.GetMetadata()
+}
+
+// SetCreatedAt 登録日時の設定
+func (m *REMapper) SetCreatedAt(t time.Time) {
 	m.CreatedAt = t
 }

@@ -116,31 +116,34 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 	r.FieldsPerRecord = -1
 	r.ReuseRecord = true
 
-	record, err := r.Read()
-	if err == io.EOF {
-		return nil, xerrors.Errorf("on read.Read receipt file EOF: %w", err)
-	}
-	if err != nil {
-		return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
-	}
-
 	receipt := &model.Receipt{
 		ReceiptItems: map[uint32]*model.ReceiptItem{},
 	}
 
-	switch record[0] {
-	case model.IRRecordType:
-		ir, err := ir(record)
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+			// return nil, xerrors.Errorf("on read.Read receipt file EOF: %w", err)
+		}
 		if err != nil {
 			return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
 		}
-		receipt.IR = ir
-	case model.RERecordType:
-		re, err := re(record, receipt.IR)
-		if err != nil {
-			return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
+
+		switch record[0] {
+		case model.IRRecordType:
+			ir, err := ir(record)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
+			}
+			receipt.IR = ir
+		case model.RERecordType:
+			re, err := re(record, receipt.IR)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
+			}
+			receipt.Container(re.ReceiptNo).RE = re
 		}
-		receipt.Container(re.ReceiptNo).RE = re
 	}
 
 	return receipt, nil
@@ -197,90 +200,6 @@ func re(record []string, ir *model.IR) (*model.RE, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("on ir.ParseUnit Sex couldn't convert number from %v: %w", record[5], err)
 	}
-	benefitRate, err := strconv.ParseUint(record[7], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit BenefitRate couldn't convert number from %v: %w", record[7], err)
-	}
-	admittedAd, err := strconv.ParseUint(record[8], 10, 32)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit AdmittedAd couldn't convert number from %v: %w", record[8], err)
-	}
-	chargeType, err := strconv.ParseUint(record[10], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit ChargeType couldn't convert number from %v: %w", record[10], err)
-	}
-	wardCount, err := strconv.ParseUint(record[12], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit WardCount couldn't convert number from %v: %w", record[12], err)
-	}
-	discountUnit, err := strconv.ParseUint(record[14], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit DiscountUnit couldn't convert number from %v: %w", record[14], err)
-	}
-	reserve1, err := strconv.ParseUint(record[15], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Reserve1 couldn't convert number from %v: %w", record[15], err)
-	}
-	reserve2, err := strconv.ParseUint(record[16], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Reserve2 couldn't convert number from %v: %w", record[16], err)
-	}
-	reserve3, err := strconv.ParseUint(record[17], 10, 8)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Reserve3 couldn't convert number from %v: %w", record[17], err)
-	}
-	reserve4, err := strconv.ParseUint(record[19], 10, 32)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Reserve4 couldn't convert number from %v: %w", record[19], err)
-	}
-	part1, err := strconv.ParseUint(record[22], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Part1 couldn't convert number from %v: %w", record[22], err)
-	}
-	sex1, err := strconv.ParseUint(record[23], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Sex1 couldn't convert number from %v: %w", record[23], err)
-	}
-	treatment1, err := strconv.ParseUint(record[24], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Treatment1 couldn't convert number from %v: %w", record[24], err)
-	}
-	disease1, err := strconv.ParseUint(record[25], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Disease1 couldn't convert number from %v: %w", record[25], err)
-	}
-	part2, err := strconv.ParseUint(record[27], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Part2 couldn't convert number from %v: %w", record[27], err)
-	}
-	sex2, err := strconv.ParseUint(record[28], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Sex2 couldn't convert number from %v: %w", record[28], err)
-	}
-	treatment2, err := strconv.ParseUint(record[29], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Treatment2 couldn't convert number from %v: %w", record[29], err)
-	}
-	disease2, err := strconv.ParseUint(record[30], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Disease2 couldn't convert number from %v: %w", record[30], err)
-	}
-	part3, err := strconv.ParseUint(record[32], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Part3 couldn't convert number from %v: %w", record[32], err)
-	}
-	sex3, err := strconv.ParseUint(record[33], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Sex3 couldn't convert number from %v: %w", record[33], err)
-	}
-	treatment3, err := strconv.ParseUint(record[34], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Treatment3 couldn't convert number from %v: %w", record[34], err)
-	}
-	disease3, err := strconv.ParseUint(record[35], 10, 16)
-	if err != nil {
-		return nil, xerrors.Errorf("on ir.ParseUnit Disease3 couldn't convert number from %v: %w", record[35], err)
-	}
 
 	return &model.RE{
 		FacilityID:   ir.FacilityID,
@@ -293,35 +212,35 @@ func re(record []string, ir *model.IR) (*model.RE, error) {
 		Name:         record[4],
 		Sex:          uint8(sex),
 		Birth:        record[6],
-		BenefitRate:  uint16(benefitRate),
-		AdmittedAd:   uint32(admittedAd),
+		BenefitRate:  record[7],
+		AdmittedAt:   record[8],
 		WardType:     record[9],
-		ChargeType:   uint8(chargeType),
+		ChargeType:   record[10],
 		ReceiptNote:  record[11],
-		WardCount:    uint16(wardCount),
+		WardCount:    record[12],
 		KarteNo:      record[13],
-		DiscountUnit: uint8(discountUnit),
-		Reserve1:     uint8(reserve1),
-		Reserve2:     uint8(reserve2),
-		Reserve3:     uint8(reserve3),
+		DiscountUnit: record[14],
+		Reserve1:     record[15],
+		Reserve2:     record[16],
+		Reserve3:     record[17],
 		SearchNo:     record[18],
-		Reserve4:     uint32(reserve4),
+		Reserve4:     record[19],
 		InvoiceInfo:  record[20],
 		Subject1:     record[21],
-		Part1:        uint16(part1),
-		Sex1:         uint16(sex1),
-		Treatment1:   uint16(treatment1),
-		Disease1:     uint16(disease1),
+		Part1:        record[22],
+		Sex1:         record[23],
+		Treatment1:   record[24],
+		Disease1:     record[25],
 		Subject2:     record[26],
-		Part2:        uint16(part2),
-		Sex2:         uint16(sex2),
-		Treatment2:   uint16(treatment2),
-		Disease2:     uint16(disease2),
+		Part2:        record[27],
+		Sex2:         record[28],
+		Treatment2:   record[29],
+		Disease2:     record[30],
 		Subject3:     record[31],
-		Part3:        uint16(part3),
-		Sex3:         uint16(sex3),
-		Treatment3:   uint16(treatment3),
-		Disease3:     uint16(disease3),
+		Part3:        record[32],
+		Sex3:         record[33],
+		Treatment3:   record[34],
+		Disease3:     record[35],
 		Kana:         record[36],
 		Condition:    record[37],
 	}, nil
