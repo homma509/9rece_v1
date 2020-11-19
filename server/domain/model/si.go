@@ -7,11 +7,10 @@ const (
 
 // SI 診療行為レコード
 type SI struct {
-	FacilityID string `dynamo:"-"` // 医療機関コード
-	InvoiceYM  string `dynamo:"-"` // 請求年月
-	Index      uint64 `dynamo:"-"` // インデックス
-	ReceiptNo  uint32 `dynamo:"-"` // レセプト番号
-
+	FacilityID    string // 医療機関コード
+	InvoiceYM     string // 請求年月
+	Index         uint64 // インデックス
+	ReceiptNo     uint32 // レセプト番号
 	RecordType    string // レコード識別情報
 	TreatmentType uint8  // 診療識別
 	ChargeType    string // 負担区分
@@ -56,24 +55,4 @@ type SI struct {
 	Day29         uint16 // 29日の情報
 	Day30         uint16 // 30日の情報
 	Day31         uint16 // 31日の情報
-}
-
-// GetFacilityID 医療機関コード
-func (si *SI) GetFacilityID() string {
-	return si.FacilityID
-}
-
-// GetInvoiceYM 請求年月
-func (si *SI) GetInvoiceYM() string {
-	return si.InvoiceYM
-}
-
-// GetIndex インデックス
-func (si *SI) GetIndex() uint64 {
-	return si.Index
-}
-
-// GetReceiptNo レセプト番号
-func (si *SI) GetReceiptNo() uint32 {
-	return si.ReceiptNo
 }

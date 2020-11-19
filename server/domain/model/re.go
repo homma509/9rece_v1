@@ -5,14 +5,6 @@ const (
 	RERecordType = "RE"
 )
 
-// REer レセプト共通レコードインターフェス
-type REer interface {
-	GetFacilityID() string
-	GetInvoiceYM() string
-	GetIndex() uint64
-	GetReceiptNo() uint32
-}
-
 // RE レセプト共通レコード
 type RE struct {
 	FacilityID   string // 医療機関コード
@@ -56,24 +48,4 @@ type RE struct {
 	Disease3     string // 診療科3 特定疾病
 	Kana         string // カタナカ（氏名）
 	Condition    string // 患者の状態
-}
-
-// GetFacilityID 医療機関コード
-func (re *RE) GetFacilityID() string {
-	return re.FacilityID
-}
-
-// GetInvoiceYM 請求年月
-func (re *RE) GetInvoiceYM() string {
-	return re.InvoiceYM
-}
-
-// GetIndex インデックス
-func (re *RE) GetIndex() uint64 {
-	return re.Index
-}
-
-// GetReceiptNo レセプト番号
-func (re *RE) GetReceiptNo() uint32 {
-	return re.ReceiptNo
 }

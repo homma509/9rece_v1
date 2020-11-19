@@ -84,7 +84,7 @@ func newREMapper(m model.RE) *REMapper {
 	}
 }
 
-// REMapper REerモデルのリソースへのマッパー構造体
+// REMapper REモデルのリソースへのマッパー構造体
 type REMapper struct {
 	model.RE
 	ID        string    `dynamo:"ID,hash"`
@@ -94,7 +94,7 @@ type REMapper struct {
 
 // GetID IDの取得
 func (m *REMapper) GetID() string {
-	return fmt.Sprintf("%s#%s", m.GetFacilityID(), m.GetInvoiceYM())
+	return fmt.Sprintf("%s#%s", m.FacilityID, m.InvoiceYM)
 }
 
 // SetID IDの 設定
@@ -104,7 +104,7 @@ func (m *REMapper) SetID() {
 
 // GetMetadata Metadataの取得
 func (m *REMapper) GetMetadata() string {
-	return fmt.Sprintf("%d#%d", m.GetReceiptNo(), m.GetIndex())
+	return fmt.Sprintf("%d#%d", m.ReceiptNo, m.Index)
 }
 
 // SetMetadata Metadataの設定
