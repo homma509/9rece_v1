@@ -23,12 +23,12 @@ resources:
         AttributeDefinitions:
           - AttributeName: ID
             AttributeType: S
-          - AttributeName: DataType
+          - AttributeName: Metadata
             AttributeType: S
         KeySchema:
           - AttributeName: ID
             KeyType: HASH
-          - AttributeName: DataType
+          - AttributeName: Metadata
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1

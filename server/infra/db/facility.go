@@ -2,12 +2,9 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/homma509/9rece/server/domain/model"
-	"github.com/pkg/errors"
 )
 
 // FacilityRepository 施設リポジトリの構造体
@@ -24,15 +21,15 @@ func NewFacilityRepository(sess *Session) *FacilityRepository {
 
 // Save 施設のスライスを登録します
 func (r *FacilityRepository) Save(ctx context.Context, ps model.Facilities) error {
-	rs := []Resource{}
-	for _, p := range ps {
-		rs = append(rs, r.newFacilityMapper(p))
-	}
+	// rs := []Resource{}
+	// for _, p := range ps {
+	// 	rs = append(rs, r.newFacilityMapper(p))
+	// }
 
-	err := r.sess.PutResources(rs)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	// err := r.sess.PutResources(rs)
+	// if err != nil {
+	// 	return errors.WithStack(err)
+	// }
 
 	return nil
 }
@@ -42,14 +39,14 @@ func (r *FacilityRepository) newFacilityMapper(p model.Facility) *FacilityMapper
 		Facility: p,
 	}
 
-	var old FacilityMapper
-	err := r.sess.GetResource(new, &old)
-	if err == nil {
-		new.SetPK()
-		new.SetSK()
-		new.SetCreatedAt(old.CreatedAt)
-		new.SetVersion(old.Version)
-	}
+	// var old FacilityMapper
+	// err := r.sess.GetResource(new, &old)
+	// if err == nil {
+	// 	new.SetPK()
+	// 	new.SetSK()
+	// 	new.SetCreatedAt(old.CreatedAt)
+	// 	new.SetVersion(old.Version)
+	// }
 
 	return new
 }
@@ -57,65 +54,32 @@ func (r *FacilityRepository) newFacilityMapper(p model.Facility) *FacilityMapper
 // FacilityMapper 施設モデルのリソースへのマッパー構造体
 type FacilityMapper struct {
 	model.Facility
-	PK        string    `dynamo:"ID,hash"`
-	SK        string    `dynamo:"DataType,range"`
-	Version   uint64    `dynamo:"Version"`
+	ID        string    `dynamo:"ID,hash"`
+	Metadata  string    `dynamo:"Metadata,range"`
 	CreatedAt time.Time `dynamo:"CreatedAt"`
-	UpdatedAt time.Time `dynamo:"UpdatedAt"`
 }
 
-// EntityName Entity名の取得
-func (m *FacilityMapper) EntityName() string {
-	t := reflect.TypeOf(m.Facility)
-	return t.Name()
+// GetID IDの取得
+func (m *FacilityMapper) GetID() string {
+	return ""
 }
 
-// GetPK PKを取得します
-func (m *FacilityMapper) GetPK() string {
-	return m.FacilityID
+// SetID IDの 設定
+func (m *FacilityMapper) SetID() {
+	m.ID = m.GetID()
 }
 
-// SetPK PKを設定します
-func (m *FacilityMapper) SetPK() {
-	m.PK = m.GetPK()
+// GetMetadata Metadataの取得
+func (m *FacilityMapper) GetMetadata() string {
+	return ""
 }
 
-// GetSK SKを取得します
-func (m *FacilityMapper) GetSK() string {
-	return fmt.Sprintf("%sInfo", m.EntityName())
+// SetMetadata Metadataの設定
+func (m *FacilityMapper) SetMetadata() {
+	m.Metadata = m.GetMetadata()
 }
 
-// SetSK SKを設定します
-func (m *FacilityMapper) SetSK() {
-	m.SK = m.GetSK()
-}
-
-// GetVersion バージョンを取得します
-func (m *FacilityMapper) GetVersion() uint64 {
-	return m.Version
-}
-
-// SetVersion Versionを設定します
-func (m *FacilityMapper) SetVersion(v uint64) {
-	m.Version = v
-}
-
-// GetCreatedAt 登録日時を取得します
-func (m *FacilityMapper) GetCreatedAt() time.Time {
-	return m.CreatedAt
-}
-
-// SetCreatedAt 登録日時を設定します
+// SetCreatedAt 登録日時の設定
 func (m *FacilityMapper) SetCreatedAt(t time.Time) {
 	m.CreatedAt = t
-}
-
-// GetUpdatedAt 更新日時を取得します
-func (m *FacilityMapper) GetUpdatedAt() time.Time {
-	return m.UpdatedAt
-}
-
-// SetUpdatedAt 更新日時を設定します
-func (m *FacilityMapper) SetUpdatedAt(t time.Time) {
-	m.UpdatedAt = t
 }

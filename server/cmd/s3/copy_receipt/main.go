@@ -11,15 +11,12 @@ import (
 )
 
 func handler(ctx context.Context, event events.S3Event) error {
-	// lc, _ := lambdacontext.FromContext(ctx)
 	log.AppLogger.Info(
 		"start lambda function",
 		"S3Event", event,
-		// "CognitoIdentityID", lc.Identity.CognitoIdentityID,
-		// "CognitoIdentityPoolID", lc.Identity.CognitoIdentityPoolID,
 	)
 
-	err := registry.Creater().UkeController().Move(ctx, event)
+	err := registry.Creater().ReceiptController().Store(ctx, event)
 	if err != nil {
 		err = xerrors.Errorf("on handler: %w", err)
 		log.AppLogger.Error(

@@ -16,12 +16,12 @@ custom:
 
 resources:
   Resources:
-    # UKEファイルのPOST Functionのロール
-    PostUkeFileRole:
+    # レセプトファイルのPut Functionのロール
+    PutReceiptRole:
       Type: AWS::IAM::Role
       Properties:
         Path: /
-        RoleName: ${self:custom.projectName}-post-ukefile
+        RoleName: ${self:custom.projectName}-put-receipt
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -33,7 +33,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: ${self:custom.projectName}-post-ukefile
+          - PolicyName: ${self:custom.projectName}-put-receipt
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -71,6 +71,69 @@ resources:
                       - - "arn:aws:s3:::"
                         - ${self:custom.serverBucketName}
                         - "/*"
+
+    # レセプトファイルのCopy Functionのロール
+    CopyReceiptRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.projectName}-copy-receipt
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+                  - "s3.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.projectName}-copy-receipt
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Sid: "Sid1"
+                  Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    Fn::Join:
+                      - ":"
+                      - - "arn:aws:logs"
+                        - Ref: "AWS::Region"
+                        - Ref: "AWS::AccountId"
+                        - "*"
+                - Sid: "Sid2"
+                  Effect: "Allow"
+                  Action:
+                    - "s3:GetObject"
+                    - "s3:ListBucket"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - ${self:custom.serverBucketName}
+                        - "/*"
+                - Sid: "Sid3"
+                  Effect: "Allow"
+                  Action:
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:GetItem"
+                    - "dynamodb:PutItem"
+                    - "dynamodb:BatchWriteItem"
+                    - "dynamodb:Query"
+                    - "dynamodb:Scan"
+                    - "dynamodb:UpdateItem"
+                  Resource:
+                    - Fn::Join:
+                        - ":"
+                        - - "arn:aws:dynamodb"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "table/${env:DYNAMO_TABLE_NAME}"
 
     # EFファイルのPOST Functionのロール
     PostEFFileRole:
@@ -198,11 +261,12 @@ package:
     - ./build/**
 
 functions:
-  # UKEファイルのPOST Function
-  PostUkeFileFunc:
-    name: ${self:custom.projectName}-post-ukefile
-    handler: build/post_ukefile/main
-    role: { Fn::GetAtt: [PostUkeFileRole, Arn] }
+  # レセプトファイルのPut Function
+  PutReceiptFunc:
+    name: ${self:custom.projectName}-put-receipt
+    handler: build/s3/put_receipt/main
+    role: { Fn::GetAtt: [PutReceiptRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}
@@ -212,11 +276,28 @@ functions:
             - suffix: .UKE
           existing: true
 
+  # レセプトファイルのCopy Function
+  CopyReceiptFunc:
+    name: ${self:custom.projectName}-copy-receipt
+    handler: build/s3/copy_receipt/main
+    role: { Fn::GetAtt: [CopyReceiptRole, Arn] }
+    maximumRetryAttempts: 0
+    timeout: 600
+    events:
+      - s3:
+          bucket: ${self:custom.serverBucketName}
+          event: s3:ObjectCreated:Copy
+          rules:
+            - prefix: receipts/
+            - suffix: .UKE
+          existing: true
+
   # EFファイルのPOST Function
   PostEFFileFunc:
     name: ${self:custom.projectName}-post-effile
     handler: build/post_effile/main
     role: { Fn::GetAtt: [PostEFFileRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}
@@ -231,6 +312,7 @@ functions:
     name: ${self:custom.projectName}-post-facility
     handler: build/post_facility/main
     role: { Fn::GetAtt: [PostFacilityRole, Arn] }
+    maximumRetryAttempts: 0
     events:
       - s3:
           bucket: ${self:custom.clientBucketName}

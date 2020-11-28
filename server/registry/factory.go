@@ -75,14 +75,14 @@ func (f *Factory) DailyClientPointFile() controller.DailyClientPointFile {
 	}).(controller.DailyClientPointFile)
 }
 
-// UkeFile UKEファイルを生成します
-func (f *Factory) UkeFile() controller.UkeFile {
-	return f.container("UkeFile", func() interface{} {
+// ReceiptFile レセプトファイルを生成します
+func (f *Factory) ReceiptFile() usecase.ReceiptFile {
+	return f.container("ReceiptFile", func() interface{} {
 		config := &aws.Config{
 			Region: aws.String(f.envs.RegionName()),
 		}
 		return file.NewFile(config)
-	}).(controller.UkeFile)
+	}).(usecase.ReceiptFile)
 }
 
 // FacilityController 施設ハンドラを生成します
@@ -105,14 +105,13 @@ func (f *Factory) DailyClientPointController() controller.DailyClientPointContro
 	}).(controller.DailyClientPointController)
 }
 
-// UkeController UKEハンドラを生成します
-func (f *Factory) UkeController() controller.UkeController {
-	return f.container("UkeController", func() interface{} {
-		return controller.NewUkeController(
-			f.UkeFile(),
-			f.envs.ServerBucketName(),
+// ReceiptController レセプトハンドラを生成します
+func (f *Factory) ReceiptController() controller.ReceiptController {
+	return f.container("ReceiptController", func() interface{} {
+		return controller.NewReceiptController(
+			f.ReceiptUsecase(),
 		)
-	}).(controller.UkeController)
+	}).(controller.ReceiptController)
 }
 
 // FacilityUsecase 施設ユースケースを生成します
@@ -133,6 +132,17 @@ func (f *Factory) DailyClientPointUsecase() usecase.DailyClientPointUsecase {
 	}).(usecase.DailyClientPointUsecase)
 }
 
+// ReceiptUsecase レセプトユースケースを生成します
+func (f *Factory) ReceiptUsecase() usecase.ReceiptUsecase {
+	return f.container("ReceiptUsecase", func() interface{} {
+		return usecase.NewReceiptUsecase(
+			f.envs.ServerBucketName(),
+			f.ReceiptFile(),
+			f.ReceiptRepository(),
+		)
+	}).(usecase.ReceiptUsecase)
+}
+
 // FacilityRepository 施設リポジトリを生成します
 func (f *Factory) FacilityRepository() *db.FacilityRepository {
 	return f.container("FacilityRepository", func() interface{} {
@@ -149,4 +159,13 @@ func (f *Factory) DailyClientPointRepository() *db.DailyClientPointRepository {
 			f.Session(),
 		)
 	}).(*db.DailyClientPointRepository)
+}
+
+// ReceiptRepository レセプトリポジトリを生成します
+func (f *Factory) ReceiptRepository() *db.ReceiptRepository {
+	return f.container("ReceiptRepository", func() interface{} {
+		return db.NewReceiptRepository(
+			f.Session(),
+		)
+	}).(*db.ReceiptRepository)
 }
