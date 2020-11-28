@@ -8,5 +8,5 @@ import (
 
 // ReceiptRepository レセプトリポジトリのインターフェース
 type ReceiptRepository interface {
-	Save(context.Context, *model.Receipt) error
+	Save(context.Context, model.Receipt) error
 }

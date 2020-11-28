@@ -123,6 +123,7 @@ resources:
                     - "dynamodb:DeleteItem"
                     - "dynamodb:GetItem"
                     - "dynamodb:PutItem"
+                    - "dynamodb:BatchWriteItem"
                     - "dynamodb:Query"
                     - "dynamodb:Scan"
                     - "dynamodb:UpdateItem"
@@ -281,6 +282,7 @@ functions:
     handler: build/s3/copy_receipt/main
     role: { Fn::GetAtt: [CopyReceiptRole, Arn] }
     maximumRetryAttempts: 0
+    timeout: 600
     events:
       - s3:
           bucket: ${self:custom.serverBucketName}

@@ -81,7 +81,7 @@ func (u *receiptUsecase) Store(ctx context.Context, bucket, key string) error {
 	}
 
 	// レセプトファイルの登録
-	if err := u.repo.Save(ctx, r); err != nil {
+	if err := u.repo.Save(ctx, *r); err != nil {
 		return xerrors.Errorf("on Store.Save: %w", err)
 	}
 
@@ -116,15 +116,13 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 	r.FieldsPerRecord = -1
 	r.ReuseRecord = true
 
-	receipt := &model.Receipt{
-		ReceiptItems: map[uint32]*model.ReceiptItem{},
-	}
+	receipt := &model.Receipt{}
+	var receiptNo uint32
 
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
 			break
-			// return nil, xerrors.Errorf("on read.Read receipt file EOF: %w", err)
 		}
 		if err != nil {
 			return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
@@ -134,15 +132,22 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 		case model.IRRecordType:
 			ir, err := ir(record)
 			if err != nil {
-				return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
+				return nil, xerrors.Errorf("on read.ir couldn't read ir record: %w", err)
 			}
-			receipt.IR = ir
+			receipt.IR = *ir
 		case model.RERecordType:
-			re, err := re(record, receipt.IR)
+			re, err := re(record)
 			if err != nil {
-				return nil, xerrors.Errorf("on read.Read receipt file empty: %w", err)
+				return nil, xerrors.Errorf("on read.re couldn't read re record: %w", err)
 			}
-			receipt.Container(re.ReceiptNo).RE = re
+			receiptNo = re.ReceiptNo
+			receipt.ReceiptItem(receiptNo).RE = *re
+		case model.SYRecordType:
+			sy, err := sy(record)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.sy couldn't read sy record: %w", err)
+			}
+			receipt.ReceiptItem(receiptNo).SYs = append(receipt.ReceiptItem(receiptNo).SYs, *sy)
 		}
 	}
 
@@ -185,10 +190,7 @@ func ir(record []string) (*model.IR, error) {
 	}, nil
 }
 
-func re(record []string, ir *model.IR) (*model.RE, error) {
-	if ir == nil {
-		return nil, fmt.Errorf("on re IR invalid value %v", ir)
-	}
+func re(record []string) (*model.RE, error) {
 	if record[0] != model.RERecordType {
 		return nil, fmt.Errorf("on re RecordType invalid value %v", record[0])
 	}
@@ -202,9 +204,6 @@ func re(record []string, ir *model.IR) (*model.RE, error) {
 	}
 
 	return &model.RE{
-		FacilityID:   ir.FacilityID,
-		InvoiceYM:    ir.InvoiceYM,
-		Index:        0,
 		RecordType:   record[0],
 		ReceiptNo:    uint32(receiptNo),
 		ReceiptType:  record[2],
@@ -243,5 +242,22 @@ func re(record []string, ir *model.IR) (*model.RE, error) {
 		Disease3:     record[35],
 		Kana:         record[36],
 		Condition:    record[37],
+	}, nil
+}
+
+func sy(record []string) (*model.SY, error) {
+	outcomeType, err := strconv.ParseUint(record[3], 10, 8)
+	if err != nil {
+		return nil, xerrors.Errorf("on sy.ParseUnit OutcomeType couldn't convert number from %v: %w", record[3], err)
+	}
+	return &model.SY{
+		RecordType:  record[0],
+		DiseaseID:   record[1],
+		ReceiptedAt: record[2],
+		OutcomeType: uint8(outcomeType),
+		ModifierID:  record[4],
+		DiseaseName: record[5],
+		MainDisease: record[6],
+		Comment:     record[7],
 	}, nil
 }

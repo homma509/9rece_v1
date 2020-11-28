@@ -7,9 +7,6 @@ const (
 
 // RE レセプト共通レコード
 type RE struct {
-	FacilityID   string // 医療機関コード
-	InvoiceYM    string // 請求年月
-	Index        uint64 // インデックス
 	RecordType   string // レコード識別情報
 	ReceiptNo    uint32 // レセプト番号
 	ReceiptType  string // レセプト種別

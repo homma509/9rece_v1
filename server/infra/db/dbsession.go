@@ -1,13 +1,18 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
+	"github.com/homma509/9rece/server/log"
+
 	"github.com/pkg/errors"
 )
+
+const batchSize = 100
 
 // Session DB接続の構造体
 type Session struct {
@@ -64,11 +69,38 @@ func (s *Session) PutResource(r Resource) error {
 
 // PutResources リソースのスライスをDBに登録します
 func (s *Session) PutResources(rs []Resource) error {
-	for _, r := range rs {
-		if err := s.PutResource(r); err != nil {
+	log.AppLogger.Info("Insert Count: ", len(rs))
+	err := s.connectTable()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	is := make([]interface{}, len(rs))
+	for i := range rs {
+		rs[i].SetID()
+		rs[i].SetMetadata()
+		rs[i].SetCreatedAt(time.Now())
+		is[i] = rs[i]
+	}
+
+	batches := make([][]interface{}, 0, (len(is)+batchSize-1)/batchSize)
+	for batchSize < len(is) {
+		is, batches = is[batchSize:], append(batches, is[0:batchSize:batchSize])
+	}
+	batches = append(batches, is)
+
+	wrote := 0
+	for _, batch := range batches {
+		wrote, err = s.table.Batch().Write().Put(batch...).Run()
+		if err != nil {
 			return errors.WithStack(err)
 		}
+		wrote += wrote
 	}
+	if wrote != len(is) {
+		errors.WithStack(fmt.Errorf("failed batch wrote %d ≠ %d(expected)", wrote, len(is)))
+	}
+
 	return nil
 }
 
