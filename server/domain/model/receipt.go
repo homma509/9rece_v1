@@ -13,9 +13,8 @@ func (r *Receipt) ReceiptItem(key uint32) *ReceiptItem {
 	}
 	if _, ok := r.receiptItems[key]; !ok {
 		r.receiptItems[key] = &ReceiptItem{
-			SYs: []SY{},
-			SIs: []SI{},
-			COs: []CO{},
+			SYs:     []SY{},
+			SIInfos: []SIInfo{},
 		}
 	}
 	return r.receiptItems[key]
@@ -28,8 +27,13 @@ func (r *Receipt) ReceiptItems() map[uint32]*ReceiptItem {
 
 // ReceiptItem レセプト明細
 type ReceiptItem struct {
-	RE  RE   // レセプト共通レコード
-	SYs []SY // 傷病名レコード
-	SIs []SI // 診療行為レコード
+	RE      RE       // レセプト共通レコード
+	SYs     []SY     // 傷病名レコード
+	SIInfos []SIInfo // 診療行為情報
+}
+
+// SIInfo 診療行為情報
+type SIInfo struct {
+	SI       // 診療行為レコード
 	COs []CO // コメントコード
 }
