@@ -9,6 +9,7 @@ import (
 
 	"github.com/homma509/9rece/server/domain/model"
 	"github.com/homma509/9rece/server/domain/repository"
+	"github.com/homma509/9rece/server/log"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"
 	"golang.org/x/xerrors"
@@ -118,6 +119,7 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 
 	receipt := &model.Receipt{}
 	var receiptNo uint32
+	var prevItem model.ReceiptItemInfo
 
 	for {
 		record, err := r.Read()
@@ -135,6 +137,7 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 				return nil, xerrors.Errorf("on read.ir couldn't read ir record: %w", err)
 			}
 			receipt.IR = *ir
+			prevItem = nil
 		case model.RERecordType:
 			re, err := re(record)
 			if err != nil {
@@ -142,12 +145,33 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 			}
 			receiptNo = re.ReceiptNo
 			receipt.ReceiptItem(receiptNo).RE = *re
+			prevItem = nil
 		case model.SYRecordType:
 			sy, err := sy(record)
 			if err != nil {
 				return nil, xerrors.Errorf("on read.sy couldn't read sy record: %w", err)
 			}
-			receipt.ReceiptItem(receiptNo).SYs = append(receipt.ReceiptItem(receiptNo).SYs, *sy)
+			item := model.NewSYInfo(*sy)
+			receipt.ReceiptItem(receiptNo).SYInfos = append(receipt.ReceiptItem(receiptNo).SYInfos, *item)
+			prevItem = item
+		case model.SIRecordType:
+			si, err := si(record)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.si couldn't read si record: %w", err)
+			}
+			item := model.NewSIInfo(*si)
+			receipt.ReceiptItem(receiptNo).SIInfos = append(receipt.ReceiptItem(receiptNo).SIInfos, *item)
+			prevItem = item
+		case model.CORecordType:
+			co, err := co(record)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.si couldn't read si record: %w", err)
+			}
+			if prevItem == nil {
+				log.AppLogger.Error("on read.co prevItem is nil", co)
+				continue
+			}
+			prevItem.AddComment(*co)
 		}
 	}
 
@@ -259,5 +283,68 @@ func sy(record []string) (*model.SY, error) {
 		DiseaseName: record[5],
 		MainDisease: record[6],
 		Comment:     record[7],
+	}, nil
+}
+
+func si(record []string) (*model.SI, error) {
+	times, err := strconv.ParseUint(record[6], 10, 16)
+	if err != nil {
+		return nil, xerrors.Errorf("on si.ParseUnit Times couldn't convert number from %v: %w", record[6], err)
+	}
+	return &model.SI{
+		RecordType:    record[0],
+		TreatmentType: record[1],
+		ChargeType:    record[2],
+		TreatmentID:   record[3],
+		Quantity:      record[4],
+		Point:         record[5],
+		Times:         uint16(times),
+		CommentID1:    record[7],
+		Comment1:      record[8],
+		CommentID2:    record[9],
+		Comment2:      record[10],
+		CommentID3:    record[11],
+		Comment3:      record[12],
+		Day1:          record[13],
+		Day2:          record[14],
+		Day3:          record[15],
+		Day4:          record[16],
+		Day5:          record[17],
+		Day6:          record[18],
+		Day7:          record[19],
+		Day8:          record[20],
+		Day9:          record[21],
+		Day10:         record[22],
+		Day11:         record[23],
+		Day12:         record[24],
+		Day13:         record[25],
+		Day14:         record[26],
+		Day15:         record[27],
+		Day16:         record[28],
+		Day17:         record[29],
+		Day18:         record[30],
+		Day19:         record[31],
+		Day20:         record[32],
+		Day21:         record[33],
+		Day22:         record[34],
+		Day23:         record[35],
+		Day24:         record[36],
+		Day25:         record[37],
+		Day26:         record[38],
+		Day27:         record[39],
+		Day28:         record[40],
+		Day29:         record[41],
+		Day30:         record[42],
+		Day31:         record[43],
+	}, nil
+}
+
+func co(record []string) (*model.CO, error) {
+	return &model.CO{
+		RecordType:    record[0],
+		TreatmentType: record[1],
+		ChargeType:    record[2],
+		CommentID:     record[3],
+		Comment:       record[4],
 	}, nil
 }
