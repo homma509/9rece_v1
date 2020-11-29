@@ -35,8 +35,8 @@ func (r *ReceiptRepository) Save(ctx context.Context, m model.Receipt) error {
 
 	for _, item := range m.ReceiptItems() {
 		rs = append(rs, newREMapper(m.IR, item.RE))
-		for i, sy := range item.SYs {
-			rs = append(rs, newSYMapper(m.IR, item.RE, sy, i))
+		for i, sy := range item.SYInfos {
+			rs = append(rs, newSYMapper(m.IR, item.RE, sy.SY, i))
 		}
 	}
 

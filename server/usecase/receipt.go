@@ -9,6 +9,7 @@ import (
 
 	"github.com/homma509/9rece/server/domain/model"
 	"github.com/homma509/9rece/server/domain/repository"
+	"github.com/homma509/9rece/server/log"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"
 	"golang.org/x/xerrors"
@@ -118,6 +119,7 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 
 	receipt := &model.Receipt{}
 	var receiptNo uint32
+	var prevItem model.ReceiptItemInfo
 
 	for {
 		record, err := r.Read()
@@ -135,6 +137,7 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 				return nil, xerrors.Errorf("on read.ir couldn't read ir record: %w", err)
 			}
 			receipt.IR = *ir
+			prevItem = nil
 		case model.RERecordType:
 			re, err := re(record)
 			if err != nil {
@@ -142,18 +145,33 @@ func read(f io.ReadCloser) (*model.Receipt, error) {
 			}
 			receiptNo = re.ReceiptNo
 			receipt.ReceiptItem(receiptNo).RE = *re
+			prevItem = nil
 		case model.SYRecordType:
 			sy, err := sy(record)
 			if err != nil {
 				return nil, xerrors.Errorf("on read.sy couldn't read sy record: %w", err)
 			}
-			receipt.ReceiptItem(receiptNo).SYs = append(receipt.ReceiptItem(receiptNo).SYs, *sy)
+			item := model.NewSYInfo(*sy)
+			receipt.ReceiptItem(receiptNo).SYInfos = append(receipt.ReceiptItem(receiptNo).SYInfos, *item)
+			prevItem = item
 		case model.SIRecordType:
 			si, err := si(record)
 			if err != nil {
 				return nil, xerrors.Errorf("on read.si couldn't read si record: %w", err)
 			}
-			receipt.ReceiptItem(receiptNo).SIInfos = append(receipt.ReceiptItem(receiptNo).SIInfos, model.SIInfo{SI: *si})
+			item := model.NewSIInfo(*si)
+			receipt.ReceiptItem(receiptNo).SIInfos = append(receipt.ReceiptItem(receiptNo).SIInfos, *item)
+			prevItem = item
+		case model.CORecordType:
+			co, err := co(record)
+			if err != nil {
+				return nil, xerrors.Errorf("on read.si couldn't read si record: %w", err)
+			}
+			if prevItem == nil {
+				log.AppLogger.Error("on read.co prevItem is nil", co)
+				continue
+			}
+			prevItem.AddComment(*co)
 		}
 	}
 
@@ -318,5 +336,15 @@ func si(record []string) (*model.SI, error) {
 		Day29:         record[41],
 		Day30:         record[42],
 		Day31:         record[43],
+	}, nil
+}
+
+func co(record []string) (*model.CO, error) {
+	return &model.CO{
+		RecordType:    record[0],
+		TreatmentType: record[1],
+		ChargeType:    record[2],
+		CommentID:     record[3],
+		Comment:       record[4],
 	}, nil
 }
